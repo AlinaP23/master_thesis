@@ -7,6 +7,18 @@ import lrp_toolbox.python.model_io as model_io
 from lrp_toolbox.python.modules import Sequential
 from lrp_toolbox.python.modules import Rect
 
+class CustomMLPClassifier(MLPClassifier):
+    def __init__(self):
+        super.__init__()
+
+    # TODO: alteration of scikit-predict function;
+    #  output: y_predicted = probabilities of output layer
+    #          activation_matrix = node activations (m=no_layers, n=no_nodes)
+    def predict_lrp(self, data):
+        activation_matrix = [None] * self.n_layers_
+
+        return y_predicted, activation_matrix
+
 
 class LRPNetwork:
     def __init__(self,
@@ -24,7 +36,7 @@ class LRPNetwork:
         x_train, x_test, y_train, y_test = \
             model_selection.train_test_split(features, labels, test_size=test_size, random_state=seed)
         # train neural network
-        mlp_network = MLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
+        mlp_network = CustomMLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
                                     learning_rate_init=self.learning_rate)
         mlp_network.fit(x_train, y_train)
 
@@ -64,18 +76,22 @@ class LRPNetwork:
         return avg_feature_lrp_scores
 
     def lrp_scores(self, network, data):
-        # TODO: alter predict function to return probabilities of output layer along with a matrix containing the node activations (m=no_layers, n=no_nodes)
-        y_predicted, activation_matrix = network.predict_proba(data)
+        y_predicted, activation_matrix = network.predict_lrp(data)
         relevance_matrix = list
         relevance_matrix.append(y_predicted)
+
         # loop over layers
         for layer_n in range(network.n_layers_, 0, -1):
+
             no_of_nodes = self.hidden_layer_sizes[layer_n - 1]
             weight_matrix = network.coefs_[layer_n - 1]
             layer_relevance = [0] * no_of_nodes
+
             # loop over nodes
             for node_n in range(0, no_of_nodes):
                 layer_relevance[node_n] = 0
+
+                # calculate relevance input per connected node in higher layer
                 for connection_n in range(0, len(weight_matrix[node_n])):
                     if weight_matrix[node_n][connection_n] != 0:
                         # j = node in lower layer; k = node in higher layer
@@ -90,6 +106,7 @@ class LRPNetwork:
             relevance_matrix.insert(index=0, object=layer_relevance)
 
         return relevance_matrix[0]
+
 
 if __name__ == "__main__":
     X = [(3, 4, 5, 6, 7), (4.2, 5.3, 3, 3, 3), (4, 3, 5, 6, 7), (6, 5, 3, 3, 3),
