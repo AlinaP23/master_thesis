@@ -151,20 +151,32 @@ if __name__ == "__main__":
     X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
     Y = iris[['species']].values.ravel()
 
+    x_train, x_test, y_train, y_test = \
+        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
+
     # standard
     learn_committee = LearnCommittee(no_of_weak_classifiers=20,
                                      percentage_of_features=0.5,
                                      no_of_features=4,
                                      no_of_out_nodes=3,
-                                     hidden_layer_sizes=(3, 3, 3),
+                                     hidden_layer_sizes=(10, 10, 10),
                                      learning_rate_init=0.01,
                                      labels=[2, 1, 0],
                                      missing_data_representation=None,
                                      p_features=None)
-
-    x_train, x_test, y_train, y_test = \
-        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
     learn_committee.fit(x_train, y_train)
+
+    # LRP
+    learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=20,
+                                         percentage_of_features=0.5,
+                                         no_of_features=4,
+                                         no_of_out_nodes=3,
+                                         hidden_layer_sizes=(10, 10, 10),
+                                         learning_rate_init=0.01,
+                                         labels=[2, 1, 0],
+                                         missing_data_representation=None,
+                                         p_features=[0.4, 0.1, 0.1, 0.4])
+    learn_committee_lrp.fit(x_train, y_train)
 
     # simulate random sensor failure
     features = range(0, len(x_test[0]))
@@ -175,10 +187,15 @@ if __name__ == "__main__":
         sensor_failure = np.random.choice(features, 1, replace=False, p=p_failure).tolist()
         x_test_failure[i, sensor_failure] = 0
 
-    predictions = learn_committee.predict(x_test)
     print("Accuracy Score - Learn++:")
-    print(accuracy_score(predictions, y_test))
+    predictions = learn_committee.predict(x_test)
+    print("w/o LRP & w/o Sensor Failure: ", accuracy_score(predictions, y_test))
 
     predictions_failure = learn_committee.predict(x_test_failure)
-    print("Accuracy Score - Learn++ w/ sensor failure:")
-    print(accuracy_score(predictions_failure, y_test))
+    print("w/o LRP & w/ Sensor Failure: ", accuracy_score(predictions_failure, y_test))
+
+    predictions_lrp = learn_committee_lrp.predict(x_test)
+    print("w/ LRP & w/o Sensor Failure: ", accuracy_score(predictions_lrp, y_test))
+
+    predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure)
+    print("w/ LRP & w/ Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))
