@@ -20,7 +20,7 @@ class Module:
     def __init__(self):
         ''' The constructor '''
 
-        #values for presetting lrp decomposition parameters per layer
+        # values for presetting lrp decomposition parameters per layer
         self.lrp_var = None
         self.lrp_param = 1.
 

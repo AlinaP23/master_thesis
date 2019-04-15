@@ -54,7 +54,7 @@ class LRPNetwork:
         self.learning_rate_init = learning_rate_init
         self.no_of_in_nodes = no_of_in_nodes
 
-    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, beta):
+    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha):
         # variable definition
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
 
@@ -94,7 +94,7 @@ class LRPNetwork:
                 feature_lrp_scores = lrp_network.lrp(r_init, 'epsilon', 0.01)  # as Eq(58)
                 # feature_lrp_scores = nn.lrp(r_init,'alphabeta',2)            # as Eq(60)
                 """
-                feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, beta)
+                feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
                 avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]
 
         if lrp_iterations != 0:
@@ -154,6 +154,7 @@ class LRPNetwork:
                             negative_relevance += relevance_matrix[0][connection_n] \
                                                   * (neg_effect_j_on_k / neg_sum_effects_on_k)
 
+                # weighting between positive and negative relevance
                 layer_relevance[node_n] = positive_relevance * alpha - negative_relevance * beta
 
             relevance_matrix.insert(0, layer_relevance)
@@ -183,8 +184,7 @@ if __name__ == "__main__":
     Y = iris[['species']].values.ravel()
 
     lrp_nn = LRPNetwork(hidden_layer_sizes=(10, 10, 10), learning_rate_init=0.01, no_of_in_nodes=len(X[0]))
-    avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(X, Y, test_size=0.1, seed=7, alpha=2, beta=1)
-    # constraints: alpha - beta = 1 & beta > 0
+    avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(X, Y, test_size=0.1, seed=7, alpha=2)
 
     print("Average LRP Scores per Feature:")
     print(avg_lrp_scores)
