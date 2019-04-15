@@ -1,14 +1,16 @@
 import numpy as np
+import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils import check_array
 from sklearn import model_selection
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, accuracy_score
 
 
 class CustomMLPClassifier(MLPClassifier):
 
     def predict_lrp(self, data):
-        """Predict and calculate LRP values using the trained model
+        """ https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/neural_network/multilayer_perceptron.py
+        Predict and calculate LRP values using the trained model
            Altered scikit-method (sole difference: output activations additionally)
 
         Parameters
@@ -29,15 +31,13 @@ class CustomMLPClassifier(MLPClassifier):
             hidden_layer_sizes = [hidden_layer_sizes]
         hidden_layer_sizes = list(hidden_layer_sizes)
 
-        layer_units = [data.shape[1]] + hidden_layer_sizes + \
-            [self.n_outputs_]
+        layer_units = [data.shape[1]] + hidden_layer_sizes + [self.n_outputs_]
 
         # Initialize layers
         activations = [data]
 
         for i in range(self.n_layers_ - 1):
-            activations.append(np.empty((data.shape[0],
-                                         layer_units[i + 1])))
+            activations.append(np.empty((data.shape[0], layer_units[i + 1])))
         # forward propagate
         self._forward_pass(activations)
         y_predicted = activations[-1]
@@ -54,7 +54,7 @@ class LRPNetwork:
         self.learning_rate_init = learning_rate_init
         self.no_of_in_nodes = no_of_in_nodes
 
-    def avg_lrp_score_per_feature(self, features, labels, test_size, seed):
+    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, beta):
         # variable definition
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
 
@@ -72,7 +72,8 @@ class LRPNetwork:
         lrp_network = model_io.read(filename)
         """
         predictions = mlp_network.predict(x_test)
-        print(classification_report(y_test, predictions))
+        print("Accuracy Score:")
+        print(accuracy_score(y_test, predictions))
 
         # calculate avg. LRP scores for features - use correctly classified test data to determine LRP scores
         lrp_iterations = 0
@@ -93,7 +94,7 @@ class LRPNetwork:
                 feature_lrp_scores = lrp_network.lrp(r_init, 'epsilon', 0.01)  # as Eq(58)
                 # feature_lrp_scores = nn.lrp(r_init,'alphabeta',2)            # as Eq(60)
                 """
-                feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]])
+                feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, beta)
                 avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]
 
         if lrp_iterations != 0:
@@ -101,7 +102,7 @@ class LRPNetwork:
 
         return avg_feature_lrp_scores
 
-    def lrp_scores(self, network, data):
+    def lrp_scores(self, network, data, alpha, beta):
         y_predicted, activation_matrix = network.predict_lrp(data)
         # prepare y_predicted so that only relevance of most probable class is distributed
         y_predicted[np.where(y_predicted != np.max(y_predicted))] = 0
@@ -119,20 +120,41 @@ class LRPNetwork:
 
             # loop over nodes
             for node_n in range(0, no_of_nodes):
-                layer_relevance[node_n] = 0
+                positive_relevance = 0
+                negative_relevance = 0
 
                 # calculate relevance input per connected node in higher layer
                 for connection_n in range(0, len(weight_matrix[node_n])):
-                    if weight_matrix[node_n][connection_n] != 0:
+                    if weight_matrix[node_n, connection_n] > 0:
                         # j = node in lower layer; k = node in higher layer
-                        effect_j_on_k = activation_matrix[layer_n - 1][0][node_n] * weight_matrix[node_n][connection_n]
+                        pos_effect_j_on_k = activation_matrix[layer_n - 1][0][node_n] \
+                                            * weight_matrix[node_n, connection_n]
                         # calculate the excitatory effects on node k in upper layer
-                        sum_effects_on_k = 0
+                        pos_sum_effects_on_k = 0
                         for i in range(0, no_of_nodes):
-                            sum_effects_on_k += activation_matrix[layer_n - 1][0][i] * weight_matrix[i, connection_n]
+                            if weight_matrix[i, connection_n] > 0:
+                                pos_sum_effects_on_k += activation_matrix[layer_n - 1][0][i] \
+                                                        * weight_matrix[i, connection_n]
+                        # calculate the positive relevance of node j
+                        if pos_effect_j_on_k != 0:
+                            positive_relevance += relevance_matrix[0][connection_n] \
+                                                  * (pos_effect_j_on_k / pos_sum_effects_on_k)
+                    elif weight_matrix[node_n, connection_n] < 0:
+                        # j = node in lower layer; k = node in higher layer
+                        neg_effect_j_on_k = activation_matrix[layer_n - 1][0][node_n] \
+                                                 * weight_matrix[node_n, connection_n]
+                        # calculate the inhibitory effects on node k in upper layer
+                        neg_sum_effects_on_k = 0
+                        for i in range(0, no_of_nodes):
+                            if weight_matrix[i, connection_n] < 0:
+                                neg_sum_effects_on_k += activation_matrix[layer_n - 1][0][i] \
+                                                        * weight_matrix[i, connection_n]
                         # calculate the relevance of node j
-                        if effect_j_on_k != 0:
-                            layer_relevance[node_n] += relevance_matrix[0][connection_n] * (effect_j_on_k / sum_effects_on_k)
+                        if neg_effect_j_on_k != 0:
+                            negative_relevance += relevance_matrix[0][connection_n] \
+                                                  * (neg_effect_j_on_k / neg_sum_effects_on_k)
+
+                layer_relevance[node_n] = positive_relevance * alpha - negative_relevance * beta
 
             relevance_matrix.insert(0, layer_relevance)
 
@@ -140,6 +162,7 @@ class LRPNetwork:
 
 
 if __name__ == "__main__":
+    """
     X = [(3, 4, 5, 6, 7), (4.2, 5.3, 3, 3, 3), (4, 3, 5, 6, 7), (6, 5, 3, 3, 3),
          (4, 6, 3, 3, 3), (3.7, 5.8, 3, 3, 3), (3.2, 4.6, 3, 3, 3), (5.2, 5.9, 3, 3, 3),
          (5, 4, 3, 3, 3), (7, 4, 3, 3, 3), (3, 7, 3, 3, 3), (4.3, 4.3, 3, 3, 3),
@@ -147,9 +170,21 @@ if __name__ == "__main__":
          (-4, -5.6, 3, 3, 3), (-3.2, -4.8, 3, 3, 3), (-2.3, -4.3, 3, 3, 3), (-2.7, -2.6, 3, 3, 3),
          (-1.5, -3.6, 3, 3, 3), (-3.6, -5.6, 3, 3, 3), (-4.5, -4.6, 3, 3, 3), (-3.7, -5.8, 3, 3, 3)]
     Y = [3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+    """
+    iris = pd.read_csv('./data/iris.csv')
 
-    lrp_nn = LRPNetwork(hidden_layer_sizes=(5, 3), learning_rate_init=0.001, no_of_in_nodes=5)
-    avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(X, Y, test_size=0.1, seed=7)
+    # Create numeric classes for species (0,1,2)
+    iris.loc[iris['species'] == 'virginica', 'species'] = 0
+    iris.loc[iris['species'] == 'versicolor', 'species'] = 1
+    iris.loc[iris['species'] == 'setosa', 'species'] = 2
+
+    # Create Input and Output columns
+    X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
+    Y = iris[['species']].values.ravel()
+
+    lrp_nn = LRPNetwork(hidden_layer_sizes=(10, 10, 10), learning_rate_init=0.01, no_of_in_nodes=len(X[0]))
+    avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(X, Y, test_size=0.1, seed=7, alpha=2, beta=1)
+    # constraints: alpha - beta = 1 & beta > 0
 
     print("Average LRP Scores per Feature:")
     print(avg_lrp_scores)
