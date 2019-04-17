@@ -7,6 +7,8 @@ from scipy.stats import truncnorm
 import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
+from sklearn.utils.extmath import safe_sparse_dot
+from sklearn.neural_network._base import LOSS_FUNCTIONS, DERIVATIVES
 from sklearn import model_selection
 from sklearn.metrics import classification_report, accuracy_score
 
@@ -36,7 +38,7 @@ class DropInNetwork(MLPClassifier):
                  p_dropin,
                  hidden_layer_sizes):
         self.train_pass = False
-        self.dropout_array = []
+        self.dropout_arrays = []
         self.p_dropin = p_dropin
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
                          learning_rate_init=learning_rate_init)
@@ -51,56 +53,34 @@ class DropInNetwork(MLPClassifier):
         """
         # Test if dropin needs to be implemented as method is called during training
         if self.train_pass:
-            # DropIn implementation
-            if type(self.p_dropin) is list:
-                self.dropout_array = np.random.binomial(1, self.p_dropin)
-            else:
-                self.dropout_array = np.random.binomial(1, self.p_dropin, size=activations[0].shape)
-            activations[0] = activations[0] * self.dropout_array
+            self.dropout_arrays = [None] * len(activations[0])
+            for i in range(len(activations[0]) - 1):
+                # DropIn implementation
+                if type(self.p_dropin) is list:
+                    self.dropout_arrays[i] = np.random.binomial(1, self.p_dropin)
+                else:
+                    self.dropout_array[i] = np.random.binomial(1, self.p_dropin, size=activations[0][i].shape)
+                activations[0][i] = activations[0][i] * self.dropout_arrays[i]
 
         super()._forward_pass(activations)
 
         return activations
 
-    def _backprop(self, X, y, activations, deltas, coef_grads,
-                  intercept_grads):
-        """Compute the MLP loss function and its corresponding derivatives
-        with respect to each parameter: weights and bias vectors.
-        Parameters
-        ----------
-        X : {array-like, sparse matrix}, shape (n_samples, n_features)
-            The input data.
-        y : array-like, shape (n_samples,)
-            The target values.
-        activations : list, length = n_layers - 1
-             The ith element of the list holds the values of the ith layer.
-        deltas : list, length = n_layers - 1
-            The ith element of the list holds the difference between the
-            activations of the i + 1 layer and the backpropagated error.
-            More specifically, deltas are gradients of loss with respect to z
-            in each layer, where z = wx + b is the value of a particular layer
-            before passing through the activation function
-        coef_grads : list, length = n_layers - 1
-            The ith element contains the amount of change used to update the
-            coefficient parameters of the ith layer in an iteration.
-        intercept_grads : list, length = n_layers - 1
-            The ith element contains the amount of change used to update the
-            intercept parameters of the ith layer in an iteration.
-        Returns
-        -------
-        loss : float
-        coef_grads : list, length = n_layers - 1
-        intercept_grads : list, length = n_layers - 1
+    def _compute_loss_grad(self, layer, n_samples, activations, deltas,
+                           coef_grads, intercept_grads):
+        """Compute the gradient of loss with respect to coefs and intercept for
+        specified layer.
+        This function does backpropagation for the specified one layer.
         """
-        loss, coef_grads, intercept_grads = super()._backprop(X, y, activations, deltas, coef_grads,
-                                                              intercept_grads)
 
-        # Test if dropin needs to be implemented as method is called during training
-        if self.train_pass:
-            coef_grads[0] = coef_grads[0] * self.dropout_array
-            intercept_grads[0] = intercept_grads[0] * self.dropout_array
+        coef_grads[layer] = safe_sparse_dot(activations[layer].T,
+                                            deltas[layer])
+        coef_grads[layer] += (self.alpha * self.coefs_[layer])
+        coef_grads[layer] /= n_samples
 
-        return loss, coef_grads, intercept_grads
+        intercept_grads[layer] = np.mean(deltas[layer], 0)
+
+        return coef_grads, intercept_grads
 
     def fit_dropin(self, features, labels):
         self.train_pass = True
@@ -136,20 +116,6 @@ class DropInNetwork(MLPClassifier):
         self.weights_in_hidden += self.learning_rate * np.dot(tmp, input_vector_dropout.T)
         """
 
-    def run(self, input_vector):
-        """
-        running the network with an input vector input_vector.
-        input_vector can be tuple, list or ndarray
-        """
-        # turning the input vector into a column vector
-        input_vector = np.array(input_vector, ndmin=2).T
-        output_vector = np.dot(self.weights_in_hidden, input_vector)
-        output_vector = activation_function(output_vector)
-
-        output_vector = np.dot(self.weights_hidden_out, output_vector)
-
-        return output_vector
-
 
 if __name__ == "__main__":
     iris = pd.read_csv('./data/iris.csv')
@@ -168,6 +134,6 @@ if __name__ == "__main__":
 
     dropin_network = DropInNetwork(hidden_layer_sizes=[10, 10, 10],
                                    learning_rate_init=0.1,
-                                   p_dropin=[0.9, 0.1, 0.9, 0.9, 0.1])
+                                   p_dropin=[0.9, 0.1, 0.9, 0.1])
 
     dropin_network.fit_dropin(x_train, y_train)
