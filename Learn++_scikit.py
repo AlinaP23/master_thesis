@@ -4,8 +4,6 @@ Learn++: https://www.researchgate.net/profile/Robi_Polikar/publication/4030043_A
 """
 
 import numpy as np
-from scipy.stats import truncnorm
-import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn import model_selection
@@ -125,21 +123,6 @@ class LearnCommittee:
 
 
 if __name__ == "__main__":
-    """data1 = [((3, 4, 5, 6, 7), (0.99, 0.01)), ((4.2, 5.3, 3, 3, 3), (0.99, 0.01)),
-             ((4, 3, 5, 6, 7), (0.99, 0.01)), ((6, 5, 3, 3, 3), (0.99, 0.01)),
-             ((4, 6, 3, 3, 3), (0.99, 0.01)), ((3.7, 5.8, 3, 3, 3), (0.99, 0.01)),
-             ((3.2, 4.6, 3, 3, 3), (0.99, 0.01)), ((5.2, 5.9, 3, 3, 3), (0.99, 0.01)),
-             ((5, 4, 3, 3, 3), (0.99, 0.01)), ((7, 4, 3, 3, 3), (0.99, 0.01)),
-             ((3, 7, 3, 3, 3), (0.99, 0.01)), ((4.3, 4.3, 3, 3, 3), (0.99, 0.01))]
-    data2 = [((-3, -4, 3, 3, 3), (0.01, 0.99)), ((-2, -3.5, 3, 3, 3), (0.01, 0.99)),
-             ((-1, -6, 3, 3, 3), (0.01, 0.99)), ((-3, -4.3, 3, 3, 3), (0.01, 0.99)),
-             ((-4, -5.6, 3, 3, 3), (0.01, 0.99)), ((-3.2, -4.8, 3, 3, 3), (0.01, 0.99)),
-             ((-2.3, -4.3, 3, 3, 3), (0.01, 0.99)), ((-2.7, -2.6, 3, 3, 3), (0.01, 0.99)),
-             ((-1.5, -3.6, 3, 3, 3), (0.01, 0.99)), ((-3.6, -5.6, 3, 3, 3), (0.01, 0.99)),
-             ((-4.5, -4.6, 3, 3, 3), (0.01, 0.99)), ((-3.7, -5.8, 3, 3, 3), (0.01, 0.99))]
-    data = data1 + data2
-    np.random.shuffle(data)
-    """
     iris = pd.read_csv('./data/iris.csv')
 
     # Create numeric classes for species (0,1,2)
@@ -192,10 +175,10 @@ if __name__ == "__main__":
     print("w/o LRP & w/o Sensor Failure: ", accuracy_score(predictions, y_test))
 
     predictions_failure = learn_committee.predict(x_test_failure)
-    print("w/o LRP & w/ Sensor Failure: ", accuracy_score(predictions_failure, y_test))
+    print("w/o LRP & w/  Sensor Failure: ", accuracy_score(predictions_failure, y_test))
 
     predictions_lrp = learn_committee_lrp.predict(x_test)
-    print("w/ LRP & w/o Sensor Failure: ", accuracy_score(predictions_lrp, y_test))
+    print("w/ LRP  & w/o Sensor Failure: ", accuracy_score(predictions_lrp, y_test))
 
     predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure)
-    print("w/ LRP & w/ Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))
+    print("w/ LRP  & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))

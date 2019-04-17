@@ -3,45 +3,110 @@ Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
 DropIn: https://arxiv.org/pdf/1705.02643.pdf
 """
 
-import numpy as np
 from scipy.stats import truncnorm
+import numpy as np
+import pandas as pd
+from sklearn.neural_network import MLPClassifier
+from sklearn import model_selection
+from sklearn.metrics import classification_report, accuracy_score
 
 
 @np.vectorize
 def sigmoid(x):
     return 1 / (1 + np.e ** -x)
 
+@np.vectorize
+def relu(x):
+    if x > 0:
+        return x
+    else:
+        return 0
 
-activation_function = sigmoid
+
+activation_function = relu
 
 
 def truncated_normal(mean=0, sd=1, low=0, upp=10):
     return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
 
 
-class DropInNetwork:
+class DropInNetwork(MLPClassifier):
     def __init__(self,
-                 no_of_in_nodes,
-                 no_of_out_nodes,
-                 no_of_hidden_nodes,
-                 learning_rate,
-                 p_dropin):
-        self.no_of_in_nodes = no_of_in_nodes
-        self.no_of_out_nodes = no_of_out_nodes
-        self.no_of_hidden_nodes = no_of_hidden_nodes
-        self.learning_rate = learning_rate
+                 learning_rate_init,
+                 p_dropin,
+                 hidden_layer_sizes):
+        self.train_pass = False
+        self.dropout_array = []
         self.p_dropin = p_dropin
-        self.create_weight_matrices()
+        super().__init__(hidden_layer_sizes=hidden_layer_sizes,
+                         learning_rate_init=learning_rate_init)
 
-    def create_weight_matrices(self):
-        rad = 1 / np.sqrt(self.no_of_in_nodes)
-        x = truncated_normal(mean=0, sd=1, low=-rad, upp=rad)
-        self.weights_in_hidden = x.rvs((self.no_of_hidden_nodes, self.no_of_in_nodes))
-        rad = 1 / np.sqrt(self.no_of_hidden_nodes)
-        x = truncated_normal(mean=0, sd=1, low=-rad, upp=rad)
-        self.weights_hidden_out = x.rvs((self.no_of_out_nodes, self.no_of_hidden_nodes))
+    def _forward_pass(self, activations):
+        """Perform a forward pass on the network by computing the values
+        of the neurons in the hidden layers and the output layer.
+        Parameters
+        ----------
+        activations : list, length = n_layers - 1
+            The ith element of the list holds the values of the ith layer.
+        """
+        # Test if dropin needs to be implemented as method is called during training
+        if self.train_pass:
+            # DropIn implementation
+            if type(self.p_dropin) is list:
+                self.dropout_array = np.random.binomial(1, self.p_dropin)
+            else:
+                self.dropout_array = np.random.binomial(1, self.p_dropin, size=activations[0].shape)
+            activations[0] = activations[0] * self.dropout_array
 
-    def train(self, input_vector, target_vector):
+        super()._forward_pass(activations)
+
+        return activations
+
+    def _backprop(self, X, y, activations, deltas, coef_grads,
+                  intercept_grads):
+        """Compute the MLP loss function and its corresponding derivatives
+        with respect to each parameter: weights and bias vectors.
+        Parameters
+        ----------
+        X : {array-like, sparse matrix}, shape (n_samples, n_features)
+            The input data.
+        y : array-like, shape (n_samples,)
+            The target values.
+        activations : list, length = n_layers - 1
+             The ith element of the list holds the values of the ith layer.
+        deltas : list, length = n_layers - 1
+            The ith element of the list holds the difference between the
+            activations of the i + 1 layer and the backpropagated error.
+            More specifically, deltas are gradients of loss with respect to z
+            in each layer, where z = wx + b is the value of a particular layer
+            before passing through the activation function
+        coef_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the
+            coefficient parameters of the ith layer in an iteration.
+        intercept_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the
+            intercept parameters of the ith layer in an iteration.
+        Returns
+        -------
+        loss : float
+        coef_grads : list, length = n_layers - 1
+        intercept_grads : list, length = n_layers - 1
+        """
+        loss, coef_grads, intercept_grads = super()._backprop(X, y, activations, deltas, coef_grads,
+                                                              intercept_grads)
+
+        # Test if dropin needs to be implemented as method is called during training
+        if self.train_pass:
+            coef_grads[0] = coef_grads[0] * self.dropout_array
+            intercept_grads[0] = intercept_grads[0] * self.dropout_array
+
+        return loss, coef_grads, intercept_grads
+
+    def fit_dropin(self, features, labels):
+        self.train_pass = True
+        super().fit(features, labels)
+        self.train_pass = False
+        """
         # input_vector and target_vector can be tuple, list or ndarray
         input_vector = np.array(input_vector, ndmin=2).T
         target_vector = np.array(target_vector, ndmin=2).T
@@ -69,6 +134,7 @@ class DropInNetwork:
         # update the weights:
         tmp = hidden_errors * output_vector_hidden * (1.0 - output_vector_hidden)
         self.weights_in_hidden += self.learning_rate * np.dot(tmp, input_vector_dropout.T)
+        """
 
     def run(self, input_vector):
         """
@@ -86,52 +152,22 @@ class DropInNetwork:
 
 
 if __name__ == "__main__":
-    data1 = [((3, 4, 5, 6, 7), (0.99, 0.01)), ((4.2, 5.3, 3, 3, 3), (0.99, 0.01)),
-             ((4, 3, 5, 6, 7), (0.99, 0.01)), ((6, 5, 3, 3, 3), (0.99, 0.01)),
-             ((4, 6, 3, 3, 3), (0.99, 0.01)), ((3.7, 5.8, 3, 3, 3), (0.99, 0.01)),
-             ((3.2, 4.6, 3, 3, 3), (0.99, 0.01)), ((5.2, 5.9, 3, 3, 3), (0.99, 0.01)),
-             ((5, 4, 3, 3, 3), (0.99, 0.01)), ((7, 4, 3, 3, 3), (0.99, 0.01)),
-             ((3, 7, 3, 3, 3), (0.99, 0.01)), ((4.3, 4.3, 3, 3, 3), (0.99, 0.01))]
-    data2 = [((-3, -4, 3, 3, 3), (0.01, 0.99)), ((-2, -3.5, 3, 3, 3), (0.01, 0.99)),
-             ((-1, -6, 3, 3, 3), (0.01, 0.99)), ((-3, -4.3, 3, 3, 3), (0.01, 0.99)),
-             ((-4, -5.6, 3, 3, 3), (0.01, 0.99)), ((-3.2, -4.8, 3, 3, 3), (0.01, 0.99)),
-             ((-2.3, -4.3, 3, 3, 3), (0.01, 0.99)), ((-2.7, -2.6, 3, 3, 3), (0.01, 0.99)),
-             ((-1.5, -3.6, 3, 3, 3), (0.01, 0.99)), ((-3.6, -5.6, 3, 3, 3), (0.01, 0.99)),
-             ((-4.5, -4.6, 3, 3, 3), (0.01, 0.99)), ((-3.7, -5.8, 3, 3, 3), (0.01, 0.99))]
-    data = data1 + data2
-    np.random.shuffle(data)
+    iris = pd.read_csv('./data/iris.csv')
 
-    simple_network = DropInNetwork(no_of_in_nodes=5,
-                                   no_of_out_nodes=2,
-                                   no_of_hidden_nodes=3,
-                                   learning_rate=0.1,
+    # Create numeric classes for species (0,1,2)
+    iris.loc[iris['species'] == 'virginica', 'species'] = 0
+    iris.loc[iris['species'] == 'versicolor', 'species'] = 1
+    iris.loc[iris['species'] == 'setosa', 'species'] = 2
+
+    # Create Input and Output columns
+    X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
+    Y = iris[['species']].values.ravel()
+
+    x_train, x_test, y_train, y_test = \
+        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
+
+    dropin_network = DropInNetwork(hidden_layer_sizes=[10, 10, 10],
+                                   learning_rate_init=0.1,
                                    p_dropin=[0.9, 0.1, 0.9, 0.9, 0.1])
-    print(simple_network.weights_in_hidden)
-    print(simple_network.weights_hidden_out)
 
-    size_of_learn_sample = int(len(data)*0.9)
-    learn_data = data[:size_of_learn_sample]
-    test_data = data[-size_of_learn_sample:]
-    print()
-
-    number_of_train_iterations = 12
-    for y in range(number_of_train_iterations):
-        np.random.shuffle(learn_data)
-        for i in range(size_of_learn_sample):
-            point, label = learn_data[i][0], learn_data[i][1]
-            simple_network.train(point, label)
-
-    for i in range(size_of_learn_sample):
-        point, label = learn_data[i][0], learn_data[i][1]
-        cls1, cls2 = simple_network.run(point)
-        print(point, cls1, cls2, end=": ")
-        if cls1 > cls2:
-            if label == (0.99, 0.01):
-                print("class1 correct", label)
-            else:
-                print("class2 incorrect", label)
-        else:
-            if label == (0.01, 0.99):
-                print("class 1 correct", label)
-            else:
-                print("class2 incorrect", label)
+    dropin_network.fit_dropin(x_train, y_train)
