@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils import check_array
+from sklearn.preprocessing import OneHotEncoder
 from sklearn import model_selection
 from sklearn.metrics import classification_report, accuracy_score
 
@@ -59,6 +60,7 @@ class LRPNetwork:
         network_results = 0
 
         for i in range(0, iterations):
+            print("Iteration:", i)
             single_network_results = self.single_network_avg_lrp_score_per_feature(features, labels, test_size,
                                                                                    seed, alpha, accuracy_threshold)
             if single_network_results is not None:
@@ -76,6 +78,9 @@ class LRPNetwork:
         x_train, x_test, y_train, y_test = \
             model_selection.train_test_split(features, labels, test_size=test_size, random_state=seed)
 
+        if isinstance(y_test, pd.DataFrame):
+            y_test = y_test.values
+
         # train neural network
         mlp_network = CustomMLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
                                           learning_rate_init=self.learning_rate_init)
@@ -89,7 +94,8 @@ class LRPNetwork:
             lrp_iterations = 0
 
             for j in range(0, len(y_test)):
-                if y_test[j] == predictions[j]:
+                print("LRP Calculation ", j, " of ", len(y_test))
+                if y_test[j].all() == predictions[j].all():
                     lrp_iterations += 1
                     feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
                     avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]
@@ -162,27 +168,41 @@ class LRPNetwork:
 
 
 if __name__ == "__main__":
-    iris = pd.read_csv('./data/iris.csv')
+    data_set = "bank"
 
-    # Create numeric classes for species (0,1,2)
-    iris.loc[iris['species'] == 'virginica', 'species'] = 0
-    iris.loc[iris['species'] == 'versicolor', 'species'] = 1
-    iris.loc[iris['species'] == 'setosa', 'species'] = 2
+    if data_set == "iris":
+        iris = pd.read_csv('./data/iris.csv')
 
-    # Create Input and Output columns
-    X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
-    Y = iris[['species']].values.ravel()
+        # Create numeric classes for species (0,1,2)
+        iris.loc[iris['species'] == 'virginica', 'species'] = 0
+        iris.loc[iris['species'] == 'versicolor', 'species'] = 1
+        iris.loc[iris['species'] == 'setosa', 'species'] = 2
+
+        # Create Input and Output columns
+        X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
+        Y = iris[['species']].values.ravel()
+
+    elif data_set == "bank":
+        bank = pd.read_csv('./data/bank_data.csv', delimiter=";")
+
+        # Create Input and Output columns
+        X = bank[['age', 'job_num', 'marital_num', 'education_num', 'default_num', 'housing_num', 'loan_num',
+                  'contact_num', 'month_num', 'day_num', 'duration', 'campaign', 'pdays', 'previous', 'poutcome',
+                  'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']].values
+        # One-hot encode Y so that the NN is created with two output nodes
+        Y = bank[['y']].values.ravel()
+        Y = pd.get_dummies(Y)
 
     # PARAMETERS:
     hidden_layer_sizes = (10, 10, 10)
     learning_rate_init = 0.1
-    test_size = 0.1
+    test_size = 0.2
     seed = 7
     alpha = 1
     accuracy_threshold = 0.8
-    iterations = 100
+    iterations = 2
     dropout_threshold_max = 0.9
-    dropout_threshold_min = 0.1
+    dropout_threshold_min = 0.2
 
     lrp_nn = LRPNetwork(hidden_layer_sizes=hidden_layer_sizes,
                         learning_rate_init=learning_rate_init,
