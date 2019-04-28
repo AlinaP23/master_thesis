@@ -137,28 +137,40 @@ if __name__ == "__main__":
     x_train, x_test, y_train, y_test = \
         model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
 
+    # NEURAL NETWORKS PARAMETERS
+    no_of_weak_classifiers = 20
+    percentage_of_features = 0.5
+    no_of_features = 4
+    no_of_out_nodes = 3
+    hidden_layer_sizes = [10, 10, 10]
+    learning_rate_init = 0.1
+    labels = [2, 1, 0]
+    missing_data_representation = None
+    p_features_standard = None
+    p_features_lrp = [0.4, 0.1, 0.1, 0.4]
+
     # standard
-    learn_committee = LearnCommittee(no_of_weak_classifiers=20,
-                                     percentage_of_features=0.5,
-                                     no_of_features=4,
-                                     no_of_out_nodes=3,
-                                     hidden_layer_sizes=(10, 10, 10),
-                                     learning_rate_init=0.01,
-                                     labels=[2, 1, 0],
-                                     missing_data_representation=None,
-                                     p_features=None)
+    learn_committee = LearnCommittee(no_of_weak_classifiers=no_of_weak_classifiers,
+                                     percentage_of_features=percentage_of_features,
+                                     no_of_features=no_of_features,
+                                     no_of_out_nodes=no_of_out_nodes,
+                                     hidden_layer_sizes=hidden_layer_sizes,
+                                     learning_rate_init=learning_rate_init,
+                                     labels=labels,
+                                     missing_data_representation=missing_data_representation,
+                                     p_features=p_features_standard)
     learn_committee.fit(x_train, y_train)
 
     # LRP
-    learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=20,
-                                         percentage_of_features=0.5,
-                                         no_of_features=4,
-                                         no_of_out_nodes=3,
-                                         hidden_layer_sizes=(10, 10, 10),
-                                         learning_rate_init=0.01,
-                                         labels=[2, 1, 0],
-                                         missing_data_representation=None,
-                                         p_features=[0.4, 0.1, 0.1, 0.4])
+    learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=no_of_weak_classifiers,
+                                         percentage_of_features=percentage_of_features,
+                                         no_of_features=no_of_features,
+                                         no_of_out_nodes=no_of_out_nodes,
+                                         hidden_layer_sizes=hidden_layer_sizes,
+                                         learning_rate_init=learning_rate_init,
+                                         labels=labels,
+                                         missing_data_representation=missing_data_representation,
+                                         p_features=p_features_lrp)
     learn_committee_lrp.fit(x_train, y_train)
 
     # simulate random sensor failure

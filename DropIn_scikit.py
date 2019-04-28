@@ -8,7 +8,6 @@ import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.extmath import safe_sparse_dot
-from sklearn.neural_network._base import LOSS_FUNCTIONS, DERIVATIVES
 from sklearn import model_selection
 from sklearn.metrics import classification_report, accuracy_score
 
@@ -16,6 +15,7 @@ from sklearn.metrics import classification_report, accuracy_score
 @np.vectorize
 def sigmoid(x):
     return 1 / (1 + np.e ** -x)
+
 
 @np.vectorize
 def relu(x):
@@ -54,13 +54,13 @@ class DropInNetwork(MLPClassifier):
         # Test if dropin needs to be implemented as method is called during training
         if self.train_pass:
             self.dropout_arrays = [None] * len(activations[0])
-            for i in range(len(activations[0]) - 1):
+            for j in range(len(activations[0])):
                 # DropIn implementation
                 if type(self.p_dropin) is list:
-                    self.dropout_arrays[i] = np.random.binomial(1, self.p_dropin)
+                    self.dropout_arrays[j] = np.random.binomial(1, self.p_dropin)
                 else:
-                    self.dropout_array[i] = np.random.binomial(1, self.p_dropin, size=activations[0][i].shape)
-                activations[0][i] = activations[0][i] * self.dropout_arrays[i]
+                    self.dropout_arrays[j] = np.random.binomial(1, self.p_dropin, size=activations[0][j].shape)
+                activations[0][j] = activations[0][j] * self.dropout_arrays[j]
 
         super()._forward_pass(activations)
 
@@ -86,35 +86,6 @@ class DropInNetwork(MLPClassifier):
         self.train_pass = True
         super().fit(features, labels)
         self.train_pass = False
-        """
-        # input_vector and target_vector can be tuple, list or ndarray
-        input_vector = np.array(input_vector, ndmin=2).T
-        target_vector = np.array(target_vector, ndmin=2).T
-
-        # DropIn implementation
-        if type(self.p_dropin) is list:
-            dropout_array = np.random.binomial(1, self.p_dropin)
-        else:
-            dropout_array = np.random.binomial(1, self.p_dropin, size=input_vector.shape)
-        input_vector_dropout = input_vector * dropout_array
-
-        output_vector1 = np.dot(self.weights_in_hidden, input_vector_dropout)
-        output_vector_hidden = activation_function(output_vector1)
-
-        output_vector2 = np.dot(self.weights_hidden_out, output_vector_hidden)
-        output_vector_network = activation_function(output_vector2)
-
-        output_errors = target_vector - output_vector_network
-        # update the weights:
-        tmp = output_errors * output_vector_network * (1.0 - output_vector_network)
-        tmp = self.learning_rate * np.dot(tmp, output_vector_hidden.T)
-        self.weights_hidden_out += tmp
-        # calculate hidden errors:
-        hidden_errors = np.dot(self.weights_hidden_out.T, output_errors)
-        # update the weights:
-        tmp = hidden_errors * output_vector_hidden * (1.0 - output_vector_hidden)
-        self.weights_in_hidden += self.learning_rate * np.dot(tmp, input_vector_dropout.T)
-        """
 
 
 if __name__ == "__main__":
@@ -132,8 +103,42 @@ if __name__ == "__main__":
     x_train, x_test, y_train, y_test = \
         model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
 
-    dropin_network = DropInNetwork(hidden_layer_sizes=[10, 10, 10],
-                                   learning_rate_init=0.1,
-                                   p_dropin=[0.9, 0.1, 0.9, 0.1])
+    # NEURAL NETWORKS PARAMETERS
+    hidden_layer_sizes = [10, 10, 10]
+    learning_rate_init = 0.1
+    p_dropin_standard = 0.6
+    p_dropin_lrp = [0.5, 0.7, 0.7, 0.5]
 
+    # standard
+    dropin_network = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
+                                   learning_rate_init=learning_rate_init,
+                                   p_dropin=p_dropin_standard)
     dropin_network.fit_dropin(x_train, y_train)
+
+    # LRP
+    dropin_network_lrp = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
+                                       learning_rate_init=learning_rate_init,
+                                       p_dropin=p_dropin_lrp)
+    dropin_network_lrp.fit_dropin(x_train, y_train)
+
+    # simulate random sensor failure
+    features = range(0, len(x_test[0]))
+    p_failure = [1/len(x_test[0])] * len(x_test[0])
+    x_test_failure = np.copy(x_test)
+
+    for i in range(0, len(x_test)):
+        sensor_failure = np.random.choice(features, 1, replace=False, p=p_failure).tolist()
+        x_test_failure[i, sensor_failure] = 0
+
+    print("Accuracy Score - DropIn:")
+    predictions = dropin_network.predict(x_test)
+    print("w/o LRP & w/o Sensor Failure: ", accuracy_score(predictions, y_test))
+
+    predictions_failure = dropin_network.predict(x_test_failure)
+    print("w/o LRP & w/  Sensor Failure: ", accuracy_score(predictions_failure, y_test))
+
+    predictions_lrp = dropin_network_lrp.predict(x_test)
+    print("w/ LRP  & w/o Sensor Failure: ", accuracy_score(predictions_lrp, y_test))
+
+    predictions_failure_lrp = dropin_network_lrp.predict(x_test_failure)
+    print("w/ LRP  & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))

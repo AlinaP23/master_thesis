@@ -54,53 +54,52 @@ class LRPNetwork:
         self.learning_rate_init = learning_rate_init
         self.no_of_in_nodes = no_of_in_nodes
 
-    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha):
+    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, threshold, iterations):
+        avg_feature_lrp_scores = [0] * self.no_of_in_nodes
+        network_results = 0
+
+        for i in range(0, iterations):
+            single_network_results = self.single_network_avg_lrp_score_per_feature(features, labels, test_size,
+                                                                                   seed, alpha, threshold)
+            if single_network_results is not None:
+                avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, single_network_results)]
+                network_results += 1
+
+        avg_feature_lrp_scores[:] = [x / network_results for x in avg_feature_lrp_scores]
+
+        return avg_feature_lrp_scores
+
+    def single_network_avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, threshold):
         # variable definition
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
 
         x_train, x_test, y_train, y_test = \
             model_selection.train_test_split(features, labels, test_size=test_size, random_state=seed)
+
         # train neural network
         mlp_network = CustomMLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
                                           learning_rate_init=self.learning_rate_init)
         mlp_network.fit(x_train, y_train)
 
-        """
-        # save the model to disk
-        filename = 'lrp_network.nn'
-        pickle.dump(mlp_network, open(filename, 'wb'))
-        lrp_network = model_io.read(filename)
-        """
         predictions = mlp_network.predict(x_test)
-        print("Accuracy Score:")
-        print(accuracy_score(y_test, predictions))
+        accuracy = accuracy_score(y_test, predictions)
 
-        # calculate avg. LRP scores for features - use correctly classified test data to determine LRP scores
-        lrp_iterations = 0
+        if accuracy > threshold:
+            # calculate avg. LRP scores for features - use correctly classified test data to determine LRP scores
+            lrp_iterations = 0
 
-        for j in range(0, len(y_test)):
-            if y_test[j] == predictions[j]:
-                lrp_iterations += 1
+            for j in range(0, len(y_test)):
+                if y_test[j] == predictions[j]:
+                    lrp_iterations += 1
+                    feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
+                    avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]
 
-                """
-                # prepare initial relevance to reflect the model's dominant prediction
-                # (ie depopulate non-dominant output neurons)
-                mask = np.zeros_like(y_predicted)
-                mask[:, np.argmax(y_predicted)] = 1
-                r_init = y_predicted * mask
+            if lrp_iterations != 0:
+                avg_feature_lrp_scores[:] = [x / lrp_iterations for x in avg_feature_lrp_scores]
 
-                # compute first layer relevance according to prediction
-                # feature_lrp_scores = lrp_network.lrp(r_init)                 # as Eq(56)
-                feature_lrp_scores = lrp_network.lrp(r_init, 'epsilon', 0.01)  # as Eq(58)
-                # feature_lrp_scores = nn.lrp(r_init,'alphabeta',2)            # as Eq(60)
-                """
-                feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
-                avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]
-
-        if lrp_iterations != 0:
-            avg_feature_lrp_scores[:] = [x / lrp_iterations for x in avg_feature_lrp_scores]
-
-        return avg_feature_lrp_scores
+            return avg_feature_lrp_scores
+        else:
+            return None
 
     def lrp_scores(self, network, data, alpha, beta):
         y_predicted, activation_matrix = network.predict_lrp(data)
@@ -163,15 +162,6 @@ class LRPNetwork:
 
 
 if __name__ == "__main__":
-    """
-    X = [(3, 4, 5, 6, 7), (4.2, 5.3, 3, 3, 3), (4, 3, 5, 6, 7), (6, 5, 3, 3, 3),
-         (4, 6, 3, 3, 3), (3.7, 5.8, 3, 3, 3), (3.2, 4.6, 3, 3, 3), (5.2, 5.9, 3, 3, 3),
-         (5, 4, 3, 3, 3), (7, 4, 3, 3, 3), (3, 7, 3, 3, 3), (4.3, 4.3, 3, 3, 3),
-         (-3, -4, 3, 3, 3), (-2, -3.5, 3, 3, 3), (-1, -6, 3, 3, 3), (-3, -4.3, 3, 3, 3),
-         (-4, -5.6, 3, 3, 3), (-3.2, -4.8, 3, 3, 3), (-2.3, -4.3, 3, 3, 3), (-2.7, -2.6, 3, 3, 3),
-         (-1.5, -3.6, 3, 3, 3), (-3.6, -5.6, 3, 3, 3), (-4.5, -4.6, 3, 3, 3), (-3.7, -5.8, 3, 3, 3)]
-    Y = [3, 3, 3, 3, 3, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-    """
     iris = pd.read_csv('./data/iris.csv')
 
     # Create numeric classes for species (0,1,2)
@@ -183,8 +173,16 @@ if __name__ == "__main__":
     X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
     Y = iris[['species']].values.ravel()
 
-    lrp_nn = LRPNetwork(hidden_layer_sizes=(10, 10, 10), learning_rate_init=0.01, no_of_in_nodes=len(X[0]))
-    avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(X, Y, test_size=0.1, seed=7, alpha=2)
+    lrp_nn = LRPNetwork(hidden_layer_sizes=(10, 10, 10),
+                        learning_rate_init=0.1,
+                        no_of_in_nodes=len(X[0]))
+    avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(features=X,
+                                                      labels=Y,
+                                                      test_size=0.1,
+                                                      seed=7,
+                                                      alpha=1,
+                                                      threshold=0.75,
+                                                      iterations=20)
 
     print("Average LRP Scores per Feature:")
     print(avg_lrp_scores)
