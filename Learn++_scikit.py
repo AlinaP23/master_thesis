@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # NEURAL NETWORKS PARAMETERS
     no_of_weak_classifiers = 20
-    percentage_of_features = 0.5
+    percentage_of_features = 0.75
     no_of_features = 4
     no_of_out_nodes = 3
     hidden_layer_sizes = [10, 10, 10]
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     labels = [2, 1, 0]
     missing_data_representation = None
     p_features_standard = None
-    p_features_lrp = [0.4, 0.1, 0.1, 0.4]
+    p_features_lrp = [0.3, 0.25, 0.3, 0.15]  # prob. of features to be chosen by classifier (should sum up to 1)
 
     # standard
     learn_committee = LearnCommittee(no_of_weak_classifiers=no_of_weak_classifiers,

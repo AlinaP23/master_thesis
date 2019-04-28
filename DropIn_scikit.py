@@ -106,8 +106,9 @@ if __name__ == "__main__":
     # NEURAL NETWORKS PARAMETERS
     hidden_layer_sizes = [10, 10, 10]
     learning_rate_init = 0.1
-    p_dropin_standard = 0.6
-    p_dropin_lrp = [0.5, 0.7, 0.7, 0.5]
+    p_dropin_standard = 0.5
+    p_dropin_lrp = [0.1, 0.46, 0.19, 0.59]
+    p_dropin_lrp_range = [0.1, 0.69, 0.24, 0.9]
 
     # standard
     dropin_network = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
@@ -120,6 +121,12 @@ if __name__ == "__main__":
                                        learning_rate_init=learning_rate_init,
                                        p_dropin=p_dropin_lrp)
     dropin_network_lrp.fit_dropin(x_train, y_train)
+
+    # LRP - Range
+    dropin_network_lrp_r = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
+                                         learning_rate_init=learning_rate_init,
+                                         p_dropin=p_dropin_lrp_range)
+    dropin_network_lrp_r.fit_dropin(x_train, y_train)
 
     # simulate random sensor failure
     features = range(0, len(x_test[0]))
@@ -142,3 +149,9 @@ if __name__ == "__main__":
 
     predictions_failure_lrp = dropin_network_lrp.predict(x_test_failure)
     print("w/ LRP  & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))
+
+    predictions_lrp_r = dropin_network_lrp_r.predict(x_test)
+    print("w/ LRPr & w/o Sensor Failure: ", accuracy_score(predictions_lrp_r, y_test))
+
+    predictions_failure_lrp_r = dropin_network_lrp_r.predict(x_test_failure)
+    print("w/ LRPr & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp_r, y_test))

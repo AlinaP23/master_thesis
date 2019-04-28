@@ -54,13 +54,13 @@ class LRPNetwork:
         self.learning_rate_init = learning_rate_init
         self.no_of_in_nodes = no_of_in_nodes
 
-    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, threshold, iterations):
+    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, accuracy_threshold, iterations):
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
         network_results = 0
 
         for i in range(0, iterations):
             single_network_results = self.single_network_avg_lrp_score_per_feature(features, labels, test_size,
-                                                                                   seed, alpha, threshold)
+                                                                                   seed, alpha, accuracy_threshold)
             if single_network_results is not None:
                 avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, single_network_results)]
                 network_results += 1
@@ -173,16 +173,52 @@ if __name__ == "__main__":
     X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
     Y = iris[['species']].values.ravel()
 
-    lrp_nn = LRPNetwork(hidden_layer_sizes=(10, 10, 10),
-                        learning_rate_init=0.1,
+    # PARAMETERS:
+    hidden_layer_sizes = (10, 10, 10)
+    learning_rate_init = 0.1
+    test_size = 0.1
+    seed = 7
+    alpha = 1
+    accuracy_threshold = 0.8
+    iterations = 100
+    dropout_threshold_max = 0.9
+    dropout_threshold_min = 0.1
+
+    lrp_nn = LRPNetwork(hidden_layer_sizes=hidden_layer_sizes,
+                        learning_rate_init=learning_rate_init,
                         no_of_in_nodes=len(X[0]))
+
     avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(features=X,
                                                       labels=Y,
-                                                      test_size=0.1,
-                                                      seed=7,
-                                                      alpha=1,
-                                                      threshold=0.75,
-                                                      iterations=20)
+                                                      test_size=test_size,
+                                                      seed=seed,
+                                                      alpha=alpha,
+                                                      accuracy_threshold=accuracy_threshold,
+                                                      iterations=iterations)
 
     print("Average LRP Scores per Feature:")
     print(avg_lrp_scores)
+
+    sum_lrp_scores = sum(avg_lrp_scores)
+    avg_lrp_scores_normalized = [x / sum_lrp_scores for x in avg_lrp_scores]
+    print("Normalized - to be used for Learn++:")
+    print(avg_lrp_scores_normalized)
+
+    max_score = max(avg_lrp_scores)
+    avg_lrp_scores_scaled = [x / max_score * dropout_threshold_max for x in avg_lrp_scores]
+    avg_lrp_scores_scaled_inverted = [1 - x for x in avg_lrp_scores_scaled]
+    print("Scaled to Dropout probabilities:")
+    print(avg_lrp_scores_scaled)
+    print("Inverted to Dropin probabilities - to be used for DropIn:")
+    print(avg_lrp_scores_scaled_inverted)
+
+    min_score = min(avg_lrp_scores)
+    lrp_range = max_score - min_score
+    threshold_range = dropout_threshold_max - dropout_threshold_min
+    avg_lrp_scores_range = \
+        [(x - min_score) / lrp_range * threshold_range + dropout_threshold_min for x in avg_lrp_scores]
+    avg_lrp_scores_range_inverted = [1 - x for x in avg_lrp_scores_range]
+    print("Scaled by range to Dropout prob.:")
+    print(avg_lrp_scores_range)
+    print("Inverted range prob.:")
+    print(avg_lrp_scores_range_inverted)
