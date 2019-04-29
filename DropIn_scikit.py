@@ -3,6 +3,7 @@ Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
 DropIn: https://arxiv.org/pdf/1705.02643.pdf
 """
 
+import data_lib
 from scipy.stats import truncnorm
 import numpy as np
 import pandas as pd
@@ -89,38 +90,16 @@ class DropInNetwork(MLPClassifier):
 
 
 if __name__ == "__main__":
-    data_set = "bank"
-
-    if data_set == "iris":
-        iris = pd.read_csv('./data/iris.csv')
-
-        # Create numeric classes for species (0,1,2)
-        iris.loc[iris['species'] == 'virginica', 'species'] = 0
-        iris.loc[iris['species'] == 'versicolor', 'species'] = 1
-        iris.loc[iris['species'] == 'setosa', 'species'] = 2
-
-        # Create Input and Output columns
-        X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
-        Y = iris[['species']].values.ravel()
-
-    elif data_set == "bank":
-        bank = pd.read_csv('./data/bank_data.csv')
-
-        # Create Input and Output columns
-        X = bank[['age', 'job_num', 'marital_num', 'education_num', 'default_num', 'housing_num', 'loan_num	',
-                  'contact_num', 'month_num', 'day_num', 'duration', 'campaign', 'pdays', 'previous', 'poutcome',
-                  'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']].values
-        Y = bank[['y']].values.ravel()
-
-    x_train, x_test, y_train, y_test = \
-        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
 
     # NEURAL NETWORKS PARAMETERS
+    X, Y, activation, labels = data_lib.get_dataset("income")
+    x_train, x_test, y_train, y_test = \
+        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
     hidden_layer_sizes = [10, 10, 10]
     learning_rate_init = 0.1
-    p_dropin_standard = 0.9
-    p_dropin_lrp = [0.1, 0.46, 0.19, 0.59]
-    p_dropin_lrp_range = [0.1, 0.69, 0.24, 0.9]
+    p_dropin_standard = 0.8
+    p_dropin_lrp = [1.0, 0.9999999925913022, 0.09999999999999998, 0.9999999269954615, 0.9999999953266986, 1.0, 0.9999999996554814, 1.0, 0.9999999998865401, 0.9999952408349287, 1.0, 1.0, 1.0]
+    p_dropin_lrp_range = [0.8, 0.7999999942376795, 0.10000000000000009, 0.7999999432186922, 0.79999999636521, 0.8, 0.7999999997320411, 0.8, 0.7999999999117534, 0.7999962984271668, 0.8, 0.8, 0.8]
 
     # standard
     dropin_network = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,

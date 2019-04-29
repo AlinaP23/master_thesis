@@ -2,7 +2,7 @@
 Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
 Learn++: https://www.researchgate.net/profile/Robi_Polikar/publication/4030043_An_Ensemble_of_Classifiers_Approach_for_the_Missing_Feature_Problem/links/004635182ebc2c7955000000/An-Ensemble-of-Classifiers-Approach-for-the-Missing-Feature-Problem.pdf
 """
-
+import data_lib
 import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
@@ -11,10 +11,11 @@ from sklearn.metrics import classification_report, accuracy_score
 
 
 class LearnPlusMLPClassifier(MLPClassifier):
-    def __init__(self, feature_selection, hidden_layer_sizes, learning_rate_init):
+    def __init__(self, feature_selection, hidden_layer_sizes, learning_rate_init, activation):
         self.feature_selection = feature_selection
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
-                         learning_rate_init=learning_rate_init)
+                         learning_rate_init=learning_rate_init,
+                         activation=activation)
 
 
 class LearnCommittee:
@@ -27,12 +28,14 @@ class LearnCommittee:
                  learning_rate_init,
                  labels,
                  p_features,
-                 missing_data_representation):
+                 missing_data_representation,
+                 activation):
 
         # to be forwarded to weak classifiers
         self.no_of_out_nodes = no_of_out_nodes
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate_init = learning_rate_init
+        self.activation = activation
 
         # used for LearnCommittee
         self.no_of_features = no_of_features
@@ -52,7 +55,7 @@ class LearnCommittee:
 
     def fit(self, features, labels):
         x_weak_train, x_weak_test, y_weak_train, y_weak_test = \
-            model_selection.train_test_split(features, labels, test_size=0.1, random_state=7)
+            model_selection.train_test_split(features, labels, test_size=0.1, random_state=7, stratify=labels)
         no_selected_features = int(self.no_of_features * self.percentage_of_features)
         feature_range = range(0, self.no_of_features)
 
@@ -72,7 +75,8 @@ class LearnCommittee:
             # instantiate weak classifier
             weak_classifier = LearnPlusMLPClassifier(feature_selection=feature_selection,
                                                      hidden_layer_sizes=self.hidden_layer_sizes,
-                                                     learning_rate_init=self.learning_rate_init)
+                                                     learning_rate_init=self.learning_rate_init,
+                                                     activation=self.activation)
 
             # train classifier
             x_reduced = x_weak_train[:, feature_selection]
@@ -86,6 +90,7 @@ class LearnCommittee:
             if accuracy > 0.5:
                 self.universal_classifier_set[k] = weak_classifier
                 k += 1
+                print(k, " weak classifiers trained")
                 for i in feature_selection:
                     self.p_features[i] = self.p_features[i] * 1 / self.no_of_features
 
@@ -123,31 +128,21 @@ class LearnCommittee:
 
 
 if __name__ == "__main__":
-    iris = pd.read_csv('./data/iris.csv')
-
-    # Create numeric classes for species (0,1,2)
-    iris.loc[iris['species'] == 'virginica', 'species'] = 0
-    iris.loc[iris['species'] == 'versicolor', 'species'] = 1
-    iris.loc[iris['species'] == 'setosa', 'species'] = 2
-
-    # Create Input and Output columns
-    X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
-    Y = iris[['species']].values.ravel()
-
-    x_train, x_test, y_train, y_test = \
-        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
 
     # NEURAL NETWORKS PARAMETERS
+    X, Y, activation, labels = data_lib.get_dataset("income")
+    x_train, x_test, y_train, y_test = \
+        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
     no_of_weak_classifiers = 20
     percentage_of_features = 0.75
-    no_of_features = 4
-    no_of_out_nodes = 3
+    no_of_features = 11
+    no_of_out_nodes = 2
     hidden_layer_sizes = [10, 10, 10]
     learning_rate_init = 0.1
-    labels = [2, 1, 0]
     missing_data_representation = None
     p_features_standard = None
-    p_features_lrp = [0.3, 0.25, 0.3, 0.15]  # prob. of features to be chosen by classifier (should sum up to 1)
+    p_features_lrp = [0.10978557321856618, 0.00027106375508642664, 0.03430786860896587, 0.00038687784441835435, 0.015654049184339644, 0.03579527808696914, 0.03172297744281773, 0.026642890424175496, 0.00021599391855117817, 0.07887582322402446, 0.6663416042920856]
+    # prob. of features to be chosen by classifier (should sum up to 1)
 
     # standard
     learn_committee = LearnCommittee(no_of_weak_classifiers=no_of_weak_classifiers,
@@ -158,7 +153,8 @@ if __name__ == "__main__":
                                      learning_rate_init=learning_rate_init,
                                      labels=labels,
                                      missing_data_representation=missing_data_representation,
-                                     p_features=p_features_standard)
+                                     p_features=p_features_standard,
+                                     activation=activation)
     learn_committee.fit(x_train, y_train)
 
     # LRP
@@ -170,7 +166,8 @@ if __name__ == "__main__":
                                          learning_rate_init=learning_rate_init,
                                          labels=labels,
                                          missing_data_representation=missing_data_representation,
-                                         p_features=p_features_lrp)
+                                         p_features=p_features_lrp,
+                                         activation=activation)
     learn_committee_lrp.fit(x_train, y_train)
 
     # simulate random sensor failure

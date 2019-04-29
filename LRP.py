@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
+import data_lib
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils import check_array
-from sklearn.preprocessing import OneHotEncoder
 from sklearn import model_selection
 from sklearn.metrics import classification_report, accuracy_score
 
@@ -50,10 +50,13 @@ class LRPNetwork:
     def __init__(self,
                  hidden_layer_sizes,
                  learning_rate_init,
-                 no_of_in_nodes):
+                 no_of_in_nodes,
+                 activation):
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate_init = learning_rate_init
         self.no_of_in_nodes = no_of_in_nodes
+        self.activation = activation
+        self.LRP_scores_regarded = 0
 
     def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, accuracy_threshold, iterations):
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
@@ -76,14 +79,15 @@ class LRPNetwork:
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
 
         x_train, x_test, y_train, y_test = \
-            model_selection.train_test_split(features, labels, test_size=test_size, random_state=seed)
+            model_selection.train_test_split(features, labels, test_size=test_size, random_state=seed, stratify=labels)
 
         if isinstance(y_test, pd.DataFrame):
             y_test = y_test.values
 
         # train neural network
         mlp_network = CustomMLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
-                                          learning_rate_init=self.learning_rate_init)
+                                          learning_rate_init=self.learning_rate_init,
+                                          activation=self.activation)
         mlp_network.fit(x_train, y_train)
 
         predictions = mlp_network.predict(x_test)
@@ -95,6 +99,7 @@ class LRPNetwork:
 
             for j in range(0, len(y_test)):
                 print("LRP Calculation ", j, " of ", len(y_test))
+                self.LRP_scores_regarded += 1
                 if y_test[j].all() == predictions[j].all():
                     lrp_iterations += 1
                     feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
@@ -168,45 +173,23 @@ class LRPNetwork:
 
 
 if __name__ == "__main__":
-    data_set = "bank"
-
-    if data_set == "iris":
-        iris = pd.read_csv('./data/iris.csv')
-
-        # Create numeric classes for species (0,1,2)
-        iris.loc[iris['species'] == 'virginica', 'species'] = 0
-        iris.loc[iris['species'] == 'versicolor', 'species'] = 1
-        iris.loc[iris['species'] == 'setosa', 'species'] = 2
-
-        # Create Input and Output columns
-        X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
-        Y = iris[['species']].values.ravel()
-
-    elif data_set == "bank":
-        bank = pd.read_csv('./data/bank_data.csv', delimiter=";")
-
-        # Create Input and Output columns
-        X = bank[['age', 'job_num', 'marital_num', 'education_num', 'default_num', 'housing_num', 'loan_num',
-                  'contact_num', 'month_num', 'day_num', 'duration', 'campaign', 'pdays', 'previous', 'poutcome',
-                  'emp.var.rate', 'cons.price.idx', 'cons.conf.idx', 'euribor3m', 'nr.employed']].values
-        # One-hot encode Y so that the NN is created with two output nodes
-        Y = bank[['y']].values.ravel()
-        Y = pd.get_dummies(Y)
 
     # PARAMETERS:
-    hidden_layer_sizes = (10, 10, 10)
+    X, Y, activation, labels = data_lib.get_dataset("income")
+    hidden_layer_sizes = (5, 6, 5)
     learning_rate_init = 0.1
     test_size = 0.2
     seed = 7
     alpha = 1
-    accuracy_threshold = 0.8
-    iterations = 2
+    accuracy_threshold = 0.7
+    iterations = 10
     dropout_threshold_max = 0.9
     dropout_threshold_min = 0.2
 
     lrp_nn = LRPNetwork(hidden_layer_sizes=hidden_layer_sizes,
                         learning_rate_init=learning_rate_init,
-                        no_of_in_nodes=len(X[0]))
+                        no_of_in_nodes=len(X[0]),
+                        activation=activation)
 
     avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(features=X,
                                                       labels=Y,
@@ -216,11 +199,14 @@ if __name__ == "__main__":
                                                       accuracy_threshold=accuracy_threshold,
                                                       iterations=iterations)
 
+    print("Number of tuples taken into consideration:")
+    print(lrp_nn.LRP_scores_regarded)
+
     print("Average LRP Scores per Feature:")
     print(avg_lrp_scores)
 
     sum_lrp_scores = sum(avg_lrp_scores)
-    avg_lrp_scores_normalized = [x / sum_lrp_scores for x in avg_lrp_scores]
+    avg_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in avg_lrp_scores]
     print("Normalized - to be used for Learn++:")
     print(avg_lrp_scores_normalized)
 
