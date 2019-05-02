@@ -14,14 +14,13 @@ x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
                                                       random=False,
                                                       multi_sensor_failure=False,
                                                       failure_percentage=0.2)
-
 # LRP
 LRP_hidden_layer_sizes = (15, 15, 15)
 LRP_learning_rate_init = 0.1
 LRP_test_size = 0.2
 LRP_seed = 7
 LRP_alpha = 2
-LRP_accuracy_threshold = 0.4
+LRP_accuracy_threshold = 0.7
 LRP_iterations = 2
 LRP_dropout_threshold_max = 0.9
 LRP_dropout_threshold_min = 0.2

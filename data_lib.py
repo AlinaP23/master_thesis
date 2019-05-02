@@ -32,7 +32,7 @@ def get_dataset(data_set):
         Y = pd.get_dummies(Y)
 
         activation = 'logistic'
-        labels = [[0, 1], [1, 0]]
+        labels = [[1, 0], [0, 1]]
         data_frame = True
 
     elif data_set == "income":
@@ -66,9 +66,11 @@ def get_dataset(data_set):
         income.loc[income['y'] == '<=50K', 'y'] = 0
         income.loc[income['y'] == '>50K', 'y'] = 1
         Y = income[['y']].values.ravel()
+        Y = pd.get_dummies(Y)
 
         activation = 'logistic'
-        labels = [0, 1]
+        labels = [[1, 0], [0, 1]]
+        data_frame = True
 
     return X, Y, activation, labels, data_frame
 

@@ -6,7 +6,6 @@ DropIn: https://arxiv.org/pdf/1705.02643.pdf
 import data_lib
 from scipy.stats import truncnorm
 import numpy as np
-import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn import model_selection

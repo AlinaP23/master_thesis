@@ -94,11 +94,11 @@ class LearnCommittee:
                 for i in feature_selection:
                     self.p_features[i] = self.p_features[i] * 1 / self.no_of_features
 
-    def predict(self, points, dataframe=False):
+    def predict(self, points, data_frame=False):
         y_predicted = [None] * len(points)
-        for i in range(0, len(points)):
-            y_predicted[i] = self.labels[self.run(points[i])]
-        if dataframe:
+        for p in range(0, len(points)):
+            y_predicted[p] = self.labels[self.run(points[p])]
+        if data_frame:
             y_predicted = pd.DataFrame(list(y_predicted))
         return y_predicted
 
