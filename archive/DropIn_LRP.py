@@ -5,7 +5,6 @@ DropIn: https://arxiv.org/pdf/1705.02643.pdf
 
 import numpy as np
 from scipy.stats import truncnorm
-import QualityMeasures as qm
 
 
 @np.vectorize

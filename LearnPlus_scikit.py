@@ -4,6 +4,7 @@ Learn++: https://www.researchgate.net/profile/Robi_Polikar/publication/4030043_A
 """
 import data_lib
 import numpy as np
+import pandas as pd
 from sklearn.neural_network import MLPClassifier
 from sklearn import model_selection
 from sklearn.metrics import classification_report, accuracy_score
@@ -93,10 +94,12 @@ class LearnCommittee:
                 for i in feature_selection:
                     self.p_features[i] = self.p_features[i] * 1 / self.no_of_features
 
-    def predict(self, points):
+    def predict(self, points, dataframe=False):
         y_predicted = [None] * len(points)
         for i in range(0, len(points)):
-            y_predicted[i] = self.run(points[i])
+            y_predicted[i] = self.labels[self.run(points[i])]
+        if dataframe:
+            y_predicted = pd.DataFrame(list(y_predicted))
         return y_predicted
 
     def run(self, point):

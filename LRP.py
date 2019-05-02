@@ -173,27 +173,30 @@ class LRPNetwork:
 
     @staticmethod
     def lrp_scores_to_percentage(average_lrp_scores):
+        average_lrp_scores = [abs(x) for x in average_lrp_scores]
         sum_lrp_scores = sum(average_lrp_scores)
-        average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in avg_lrp_scores]
+        average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in average_lrp_scores]
         return average_lrp_scores_normalized
 
     @staticmethod
     def lrp_scores_to_scaled(average_lrp_scores, threshold_max):
+        average_lrp_scores = [abs(x) for x in average_lrp_scores]
         max_score = max(average_lrp_scores)
         average_lrp_scores_scaled = [x / max_score * threshold_max for x in average_lrp_scores]
         average_lrp_scores_scaled_inverted = [1 - x for x in average_lrp_scores_scaled]
         return average_lrp_scores_scaled, average_lrp_scores_scaled_inverted
 
     @staticmethod
-    def lrp_scores_to_scaled(average_lrp_scores, threshold_max, threshold_min):
+    def lrp_scores_to_scaled_range(average_lrp_scores, threshold_max, threshold_min):
+        average_lrp_scores = [abs(x) for x in average_lrp_scores]
         max_score = max(average_lrp_scores)
-        min_score = min(avg_lrp_scores)
+        min_score = min(average_lrp_scores)
         lrp_range = max_score - min_score
         threshold_range = threshold_max - threshold_min
-        avg_lrp_scores_range = \
-            [(x - min_score) / lrp_range * threshold_range + threshold_min for x in avg_lrp_scores]
-        avg_lrp_scores_range_inverted = [1 - x for x in avg_lrp_scores_range]
-        return avg_lrp_scores_range, avg_lrp_scores_range_inverted
+        average_lrp_scores_range = \
+            [(x - min_score) / lrp_range * threshold_range + threshold_min for x in average_lrp_scores]
+        average_lrp_scores_range_inverted = [1 - x for x in average_lrp_scores_range]
+        return average_lrp_scores_range, average_lrp_scores_range_inverted
 
 
 if __name__ == "__main__":
