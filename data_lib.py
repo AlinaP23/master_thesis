@@ -1,5 +1,6 @@
 from sklearn.preprocessing import LabelEncoder
 import pandas as pd
+import numpy as np
 
 
 def get_dataset(data_set):
@@ -49,3 +50,15 @@ def get_dataset(data_set):
         labels = [0, 1]
 
     return X, Y, activation, labels
+
+
+def get_sensor_failure_test_set(original_test_set, random):
+    if random:
+        features = range(0, len(original_test_set[0]))
+        p_failure = [1 / len(original_test_set[0])] * len(original_test_set[0])
+        x_test_failure = np.copy(original_test_set)
+        for i in range(0, len(original_test_set)):
+            sensor_failure = np.random.choice(features, 1, replace=False, p=p_failure).tolist()
+            x_test_failure[i, sensor_failure] = 0
+
+    return x_test_failure

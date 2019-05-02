@@ -171,6 +171,30 @@ class LRPNetwork:
 
         return relevance_matrix[0]
 
+    @staticmethod
+    def lrp_scores_to_percentage(average_lrp_scores):
+        sum_lrp_scores = sum(average_lrp_scores)
+        average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in avg_lrp_scores]
+        return average_lrp_scores_normalized
+
+    @staticmethod
+    def lrp_scores_to_scaled(average_lrp_scores, threshold_max):
+        max_score = max(average_lrp_scores)
+        average_lrp_scores_scaled = [x / max_score * threshold_max for x in average_lrp_scores]
+        average_lrp_scores_scaled_inverted = [1 - x for x in average_lrp_scores_scaled]
+        return average_lrp_scores_scaled, average_lrp_scores_scaled_inverted
+
+    @staticmethod
+    def lrp_scores_to_scaled(average_lrp_scores, threshold_max, threshold_min):
+        max_score = max(average_lrp_scores)
+        min_score = min(avg_lrp_scores)
+        lrp_range = max_score - min_score
+        threshold_range = threshold_max - threshold_min
+        avg_lrp_scores_range = \
+            [(x - min_score) / lrp_range * threshold_range + threshold_min for x in avg_lrp_scores]
+        avg_lrp_scores_range_inverted = [1 - x for x in avg_lrp_scores_range]
+        return avg_lrp_scores_range, avg_lrp_scores_range_inverted
+
 
 if __name__ == "__main__":
 
@@ -205,25 +229,19 @@ if __name__ == "__main__":
     print("Average LRP Scores per Feature:")
     print(avg_lrp_scores)
 
-    sum_lrp_scores = sum(avg_lrp_scores)
-    avg_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in avg_lrp_scores]
+    avg_lrp_scores_normalized = lrp_nn.lrp_scores_to_percentage(avg_lrp_scores)
     print("Normalized - to be used for Learn++:")
     print(avg_lrp_scores_normalized)
 
-    max_score = max(avg_lrp_scores)
-    avg_lrp_scores_scaled = [x / max_score * dropout_threshold_max for x in avg_lrp_scores]
-    avg_lrp_scores_scaled_inverted = [1 - x for x in avg_lrp_scores_scaled]
+    avg_lrp_scores_scaled, avg_lrp_scores_scaled_inverted = \
+        lrp_nn.lrp_scores_to_scaled(avg_lrp_scores, dropout_threshold_max)
     print("Scaled to Dropout probabilities:")
     print(avg_lrp_scores_scaled)
     print("Inverted to Dropin probabilities - to be used for DropIn:")
     print(avg_lrp_scores_scaled_inverted)
 
-    min_score = min(avg_lrp_scores)
-    lrp_range = max_score - min_score
-    threshold_range = dropout_threshold_max - dropout_threshold_min
-    avg_lrp_scores_range = \
-        [(x - min_score) / lrp_range * threshold_range + dropout_threshold_min for x in avg_lrp_scores]
-    avg_lrp_scores_range_inverted = [1 - x for x in avg_lrp_scores_range]
+    avg_lrp_scores_range, avg_lrp_scores_range_inverted = \
+        lrp_nn.lrp_scores_to_scaled(avg_lrp_scores, dropout_threshold_max, dropout_threshold_min)
     print("Scaled by range to Dropout prob.:")
     print(avg_lrp_scores_range)
     print("Inverted range prob.:")
