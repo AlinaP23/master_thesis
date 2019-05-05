@@ -53,11 +53,12 @@ class LearnCommittee:
             for k in range(0, self.no_of_features):
                 self.p_features[k] = 1 / self.no_of_features
 
-    def fit(self, features, labels):
+    def fit(self, features, labels, np_seed, split_seed):
         x_weak_train, x_weak_test, y_weak_train, y_weak_test = \
-            model_selection.train_test_split(features, labels, test_size=0.1, random_state=7, stratify=labels)
+            model_selection.train_test_split(features, labels, test_size=0.1, random_state=split_seed, stratify=labels)
         no_selected_features = int(self.no_of_features * self.percentage_of_features)
         feature_range = range(0, self.no_of_features)
+        np.random.seed(np_seed)
 
         # Training of set of weak classifiers
         k = 0
@@ -132,7 +133,7 @@ class LearnCommittee:
 if __name__ == "__main__":
 
     # NEURAL NETWORKS PARAMETERS
-    X, Y, activation, labels = data_lib.get_dataset("income")
+    X, Y, activation, labels, df = data_lib.get_dataset("income_balanced")
     x_train, x_test, y_train, y_test = \
         model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
     no_of_weak_classifiers = 20
@@ -182,14 +183,14 @@ if __name__ == "__main__":
         x_test_failure[i, sensor_failure] = 0
 
     print("Accuracy Score - Learn++:")
-    predictions = learn_committee.predict(x_test)
+    predictions = learn_committee.predict(x_test, df)
     print("w/o LRP & w/o Sensor Failure: ", accuracy_score(predictions, y_test))
 
-    predictions_failure = learn_committee.predict(x_test_failure)
+    predictions_failure = learn_committee.predict(x_test_failure, df)
     print("w/o LRP & w/  Sensor Failure: ", accuracy_score(predictions_failure, y_test))
 
-    predictions_lrp = learn_committee_lrp.predict(x_test)
+    predictions_lrp = learn_committee_lrp.predict(x_test, df)
     print("w/ LRP  & w/o Sensor Failure: ", accuracy_score(predictions_lrp, y_test))
 
-    predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure)
+    predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure, df)
     print("w/ LRP  & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))

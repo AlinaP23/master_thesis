@@ -70,7 +70,8 @@ class LRPNetwork:
                 avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, single_network_results)]
                 network_results += 1
 
-        avg_feature_lrp_scores[:] = [x / network_results for x in avg_feature_lrp_scores]
+        if network_results != 0:
+            avg_feature_lrp_scores[:] = [x / network_results for x in avg_feature_lrp_scores]
 
         return avg_feature_lrp_scores
 

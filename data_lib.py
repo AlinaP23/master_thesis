@@ -75,9 +75,10 @@ def get_dataset(data_set):
     return X, Y, activation, labels, data_frame
 
 
-def get_sensor_failure_test_set(original_test_set, random=False, multi_sensor_failure=False, failure_percentage=0.2, ):
+def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_sensor_failure=False, failure_percentage=0.2):
     features = range(0, len(original_test_set[0]))
     x_test_failure = np.copy(original_test_set)
+    np.random.seed(np_seed)
 
     # --- MULTI-SENSOR FAILURE --- #
     # simulate random failure of random number of sensors

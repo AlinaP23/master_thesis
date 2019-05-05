@@ -1,29 +1,35 @@
 import data_lib
 from LRP import LRPNetwork
-from LearnPlus_scikit import LearnCommittee
-from DropIn_scikit import DropInNetwork
+from LearnPlus import LearnCommittee
+from DropIn import DropInNetwork
 from sklearn import model_selection
 from sklearn.metrics import accuracy_score
 
 # --- PARAMETERS --- #
 # General
-X, Y, activation, labels, label_df = data_lib.get_dataset("bank")
+data_set = "bank"
+random_state = 7
+test_size = 0.1
+failure_simulation_np_seed = 7
+failure_percentage = 0.2
+X, Y, activation, labels, label_df = data_lib.get_dataset(data_set)
 x_train, x_test, y_train, y_test = \
-    model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
+    model_selection.train_test_split(X, Y, test_size=test_size, random_state=random_state)
 x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
+                                                      np_seed=failure_simulation_np_seed,
                                                       random=False,
                                                       multi_sensor_failure=False,
-                                                      failure_percentage=0.2)
+                                                      failure_percentage=failure_percentage)
 # LRP
 LRP_hidden_layer_sizes = (15, 15, 15)
 LRP_learning_rate_init = 0.1
 LRP_test_size = 0.2
 LRP_seed = 7
 LRP_alpha = 2
-LRP_accuracy_threshold = 0.7
+LRP_accuracy_threshold = 0.4
 LRP_iterations = 2
-LRP_dropout_threshold_max = 0.9
-LRP_dropout_threshold_min = 0.2
+LRP_dropout_threshold_max = 0.95
+LRP_dropout_threshold_min = 0.1
 
 # Learn++
 learn_no_of_weak_classifiers = 20
@@ -34,11 +40,13 @@ learn_hidden_layer_sizes = [10, 10, 10]
 learn_learning_rate_init = 0.1
 learn_missing_data_representation = None
 learn_p_features_standard = None
+learn_np_seed = 7
 
 # DropIn
 dropin_hidden_layer_sizes = [10, 10, 10]
 dropin_learning_rate_init = 0.1
 p_dropin_standard = 0.8
+dropin_np_seed = 7
 
 # --- LRP Score Calculation --- #
 print("Training LRP Network...")
@@ -74,7 +82,7 @@ learn_committee = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classif
                                  missing_data_representation=learn_missing_data_representation,
                                  p_features=learn_p_features_standard,
                                  activation=activation)
-learn_committee.fit(x_train, y_train)
+learn_committee.fit(x_train, y_train, learn_np_seed, random_state)
 
 # LRP
 print("Training LRP Learn++ Committee...")
@@ -88,7 +96,7 @@ learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_cla
                                      missing_data_representation=learn_missing_data_representation,
                                      p_features=avg_lrp_scores_normalized,
                                      activation=activation)
-learn_committee_lrp.fit(x_train, y_train)
+learn_committee_lrp.fit(x_train, y_train, learn_np_seed, random_state)
 
 # Validation
 print("Validating Learn++...")
@@ -103,21 +111,21 @@ print("Training Standard DropIn...")
 dropin_network = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
                                learning_rate_init=dropin_learning_rate_init,
                                p_dropin=p_dropin_standard)
-dropin_network.fit_dropin(x_train, y_train)
+dropin_network.fit_dropin(x_train, y_train, dropin_np_seed)
 
 # LRP
 print("Training LRP DropIn (scaled)...")
 dropin_network_lrp = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
                                    learning_rate_init=dropin_learning_rate_init,
                                    p_dropin=avg_lrp_scores_scaled_inverted)
-dropin_network_lrp.fit_dropin(x_train, y_train)
+dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed)
 
 # LRP - Range
 print("Training LRP DropIn (range)...")
 dropin_network_lrp_r = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
                                      learning_rate_init=dropin_learning_rate_init,
                                      p_dropin=avg_lrp_scores_range_inverted)
-dropin_network_lrp_r.fit_dropin(x_train, y_train)
+dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed)
 
 # Validation
 print("Validating DropIn...")
@@ -129,6 +137,7 @@ dropin_predictions_lrp_r = dropin_network_lrp_r.predict(x_test)
 dropin_predictions_failure_lrp_r = dropin_network_lrp_r.predict(x_test_failure)
 
 # --- PRINT RESULTS --- #
+print("Data Set: ", data_set)
 print("Number of tuples taken into consideration:")
 print(lrp_nn.LRP_scores_regarded)
 print("Average LRP Scores per Feature:")

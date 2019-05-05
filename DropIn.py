@@ -82,8 +82,9 @@ class DropInNetwork(MLPClassifier):
 
         return coef_grads, intercept_grads
 
-    def fit_dropin(self, features, labels):
+    def fit_dropin(self, features, labels, np_seed):
         self.train_pass = True
+        np.random.seed(np_seed)
         super().fit(features, labels)
         self.train_pass = False
 
