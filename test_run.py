@@ -25,6 +25,7 @@ LRP_hidden_layer_sizes = (15, 15, 15)
 LRP_learning_rate_init = 0.1
 LRP_test_size = 0.2
 LRP_seed = 7
+LRP_random_states = [5, 5]
 LRP_alpha = 2
 LRP_accuracy_threshold = 0.4
 LRP_iterations = 2
@@ -47,6 +48,7 @@ dropin_hidden_layer_sizes = [10, 10, 10]
 dropin_learning_rate_init = 0.1
 p_dropin_standard = 0.8
 dropin_np_seed = 7
+dropin_random_state = 7
 
 # --- LRP Score Calculation --- #
 print("Training LRP Network...")
@@ -55,13 +57,18 @@ lrp_nn = LRPNetwork(hidden_layer_sizes=LRP_hidden_layer_sizes,
                     no_of_in_nodes=len(X[0]),
                     activation=activation)
 print("Calculating LRP Scores...")
-avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(features=X,
-                                                  labels=Y,
-                                                  test_size=LRP_test_size,
-                                                  seed=LRP_seed,
-                                                  alpha=LRP_alpha,
-                                                  accuracy_threshold=LRP_accuracy_threshold,
-                                                  iterations=LRP_iterations)
+avg_lrp_scores, mlp_network = lrp_nn.avg_lrp_score_per_feature(features=X,
+                                                               labels=Y,
+                                                               test_size=LRP_test_size,
+                                                               seed=LRP_seed,
+                                                               random_states=LRP_random_states,
+                                                               alpha=LRP_alpha,
+                                                               accuracy_threshold=LRP_accuracy_threshold,
+                                                               iterations=LRP_iterations)
+print("Validating LRP NN...")
+lrp_predictions = mlp_network.predict(x_test)
+lrp_predictions_failure = mlp_network.predict(x_test_failure)
+
 print("Transforming LRP Scores...")
 avg_lrp_scores_normalized = lrp_nn.lrp_scores_to_percentage(avg_lrp_scores)
 avg_lrp_scores_scaled, avg_lrp_scores_scaled_inverted = \
@@ -110,21 +117,24 @@ learn_predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure, labe
 print("Training Standard DropIn...")
 dropin_network = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
                                learning_rate_init=dropin_learning_rate_init,
-                               p_dropin=p_dropin_standard)
+                               p_dropin=p_dropin_standard,
+                               random_state=dropin_random_state)
 dropin_network.fit_dropin(x_train, y_train, dropin_np_seed)
 
 # LRP
 print("Training LRP DropIn (scaled)...")
 dropin_network_lrp = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
                                    learning_rate_init=dropin_learning_rate_init,
-                                   p_dropin=avg_lrp_scores_scaled_inverted)
+                                   p_dropin=avg_lrp_scores_scaled_inverted,
+                                   random_state=dropin_random_state)
 dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed)
 
 # LRP - Range
 print("Training LRP DropIn (range)...")
 dropin_network_lrp_r = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
                                      learning_rate_init=dropin_learning_rate_init,
-                                     p_dropin=avg_lrp_scores_range_inverted)
+                                     p_dropin=avg_lrp_scores_range_inverted,
+                                     random_state=dropin_random_state)
 dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed)
 
 # Validation
@@ -152,6 +162,10 @@ print("Scaled by range to Dropout prob.:")
 print(avg_lrp_scores_range)
 print("Inverted range prob.:")
 print(avg_lrp_scores_range_inverted)
+
+print("Accuracy Score - LRP Network: ")
+print("           w/o Sensor Failure: ", accuracy_score(lrp_predictions, y_test))
+print("           w/  Sensor Failure: ", accuracy_score(lrp_predictions_failure, y_test))
 
 print("Accuracy Score - Learn++:")
 print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(learn_predictions, y_test))

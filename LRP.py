@@ -58,14 +58,18 @@ class LRPNetwork:
         self.activation = activation
         self.LRP_scores_regarded = 0
 
-    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, accuracy_threshold, iterations):
+    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_states, alpha, accuracy_threshold,
+                                  iterations):
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
+        single_networks = [None] * iterations
+        accuracies = [0] * iterations
         network_results = 0
 
         for i in range(0, iterations):
             print("Iteration:", i)
-            single_network_results = self.single_network_avg_lrp_score_per_feature(features, labels, test_size,
-                                                                                   seed, alpha, accuracy_threshold)
+            single_network_results, single_networks[i], accuracies[i] = \
+                self.single_network_avg_lrp_score_per_feature(features, labels, test_size, seed, random_states[i],
+                                                              alpha, accuracy_threshold)
             if single_network_results is not None:
                 avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, single_network_results)]
                 network_results += 1
@@ -73,9 +77,12 @@ class LRPNetwork:
         if network_results != 0:
             avg_feature_lrp_scores[:] = [x / network_results for x in avg_feature_lrp_scores]
 
-        return avg_feature_lrp_scores
+        highest_performing_network = single_networks[accuracies.index(max(accuracies))]
 
-    def single_network_avg_lrp_score_per_feature(self, features, labels, test_size, seed, alpha, threshold):
+        return avg_feature_lrp_scores, highest_performing_network
+
+    def single_network_avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_state, alpha,
+                                                 threshold):
         # variable definition
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
 
@@ -88,7 +95,8 @@ class LRPNetwork:
         # train neural network
         mlp_network = CustomMLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
                                           learning_rate_init=self.learning_rate_init,
-                                          activation=self.activation)
+                                          activation=self.activation,
+                                          random_state=random_state)
         mlp_network.fit(x_train, y_train)
 
         predictions = mlp_network.predict(x_test)
@@ -109,9 +117,9 @@ class LRPNetwork:
             if lrp_iterations != 0:
                 avg_feature_lrp_scores[:] = [x / lrp_iterations for x in avg_feature_lrp_scores]
 
-            return avg_feature_lrp_scores
+            return avg_feature_lrp_scores, mlp_network, accuracy
         else:
-            return None
+            return None, mlp_network, accuracy
 
     def lrp_scores(self, network, data, alpha, beta):
         y_predicted, activation_matrix = network.predict_lrp(data)
