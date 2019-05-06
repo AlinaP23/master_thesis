@@ -28,7 +28,23 @@ class SelectiveRetrainingNetwork(MLPClassifier):
 
     def _backprop(self, x, y, activations, deltas, coef_grads, intercept_grads):
         loss, coef_grads, intercept_grads = super()._backprop(x, y, activations, deltas, coef_grads, intercept_grads)
+
         if self.retrain_pass:
+            # normalize weight threshold
+            maxs = []
+            mins = []
+            for w1 in self.coefs_:
+                maxs_temp = []
+                mins_temp = []
+                for w2 in w1:
+                    maxs_temp.append(max(w2, key=abs))
+                    mins_temp.append(min(w2, key=abs))
+                maxs.append(max(maxs_temp, key=abs))
+                mins.append(min(mins_temp, key=abs))
+
+            weight_range = abs(max(maxs, key=abs)) - abs(min(mins, key=abs))
+            normalized_threshold = abs(min(mins, key=abs)) + weight_range * self.weight_threshold
+
             # determine nodes & weights affected by missing feature
             affected_nodes = []
             affected_coefs = []
@@ -41,7 +57,7 @@ class SelectiveRetrainingNetwork(MLPClassifier):
                     if affected_nodes[layer - 1][node] == 1:
                         weights = [0] * len(self.coefs_[layer-1][node])
                         for x in range(0, len(self.coefs_[layer-1][node])):
-                            if abs(self.coefs_[layer-1][node][x]) > self.weight_threshold:
+                            if abs(self.coefs_[layer-1][node][x]) > normalized_threshold:
                                 weights[x] = 1
                                 affected_nodes[layer][x] = 1
                     else:
@@ -113,7 +129,7 @@ if __name__ == "__main__":
     sr_learning_rate_init = 0.1
     sr_hidden_layer_sizes = [10, 10, 10]
     sr_random_state = 7
-    sr_weight_threshold = 0
+    sr_weight_threshold = 0.7
 
     selective_committee = SelectiveRetrainingCommittee(learning_rate_init=sr_learning_rate_init,
                                                        hidden_layer_sizes=sr_hidden_layer_sizes,
