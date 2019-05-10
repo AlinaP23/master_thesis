@@ -2,11 +2,9 @@ import numpy as np
 import pandas as pd
 import data_lib
 from sklearn.neural_network import MLPClassifier
-from sklearn.utils import check_array
 from sklearn import model_selection
-from sklearn.metrics import classification_report, accuracy_score
-from sklearn.utils.extmath import safe_sparse_dot
-from copy import copy, deepcopy
+from sklearn.metrics import accuracy_score
+from copy import copy
 
 
 class SelectiveRetrainingNetwork(MLPClassifier):
@@ -108,7 +106,7 @@ class SelectiveRetrainingCommittee:
             y_predicted = pd.DataFrame(y_predicted)
         return y_predicted
 
-    def predict_without_retraining (self, points):
+    def predict_without_retraining(self, points):
         predictions = self.selective_network.predict(points)
 
         return predictions
