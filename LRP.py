@@ -58,9 +58,9 @@ class LRPNetwork:
         self.activation = activation
         self.LRP_scores_regarded = 0
 
-    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_states, alpha, accuracy_threshold,
-                                  iterations):
+    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_states, alpha, accuracy_threshold):
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
+        iterations = len(random_states)
         single_networks = [None] * iterations
         accuracies = [0] * iterations
         network_results = 0

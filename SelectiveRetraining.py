@@ -4,7 +4,7 @@ import data_lib
 from sklearn.neural_network import MLPClassifier
 from sklearn import model_selection
 from sklearn.metrics import accuracy_score
-from copy import copy
+from copy import deepcopy
 
 
 class SelectiveRetrainingNetwork(MLPClassifier):
@@ -25,8 +25,6 @@ class SelectiveRetrainingNetwork(MLPClassifier):
         self.retrain_pass = False
 
     def _backprop(self, x, y, activations, deltas, coef_grads, intercept_grads):
-        loss, coef_grads, intercept_grads = super()._backprop(x, y, activations, deltas, coef_grads, intercept_grads)
-
         if self.retrain_pass:
             # normalize weight threshold
             maxs = []
@@ -54,18 +52,19 @@ class SelectiveRetrainingNetwork(MLPClassifier):
                 for node in range(0, len(self.coefs_[layer-1])):
                     if affected_nodes[layer - 1][node] == 1:
                         weights = [0] * len(self.coefs_[layer-1][node])
-                        for x in range(0, len(self.coefs_[layer-1][node])):
-                            if abs(self.coefs_[layer-1][node][x]) > normalized_threshold:
-                                weights[x] = 1
-                                affected_nodes[layer][x] = 1
+                        for m in range(0, len(self.coefs_[layer-1][node])):
+                            if abs(self.coefs_[layer-1][node][m]) > normalized_threshold:
+                                weights[m] = 1
+                                affected_nodes[layer][m] = 1
                     else:
                         weights = [0] * len(self.coefs_[layer-1][node])
                     layer_weights.append(weights)
                 affected_coefs.append(layer_weights)
 
-            # restrict coef & intercept adjustment to nodes affected to feature by setting all other grads to 0
-            coef_grads = [x * y for x, y in zip(coef_grads, affected_coefs)]
-            intercept_grads = [x * y for x, y in zip(intercept_grads, affected_nodes[1:])]
+            # restrict coef & intercept adjustment to nodes affected to by setting the deltas for all others to 0
+            deltas = [d * n for d, n in zip(deltas, affected_nodes)]
+
+        loss, coef_grads, intercept_grads = super()._backprop(x, y, activations, deltas, coef_grads, intercept_grads)
 
         return loss, coef_grads, intercept_grads
 
@@ -78,30 +77,59 @@ class SelectiveRetrainingCommittee:
                                                             random_state=random_state,
                                                             activation=activation)
 
-    def fit(self, features, labels, weight_threshold):
+    def fit(self, features, labels, weight_threshold, multi_sensor_failure=False, np_seed=7, percentage_of_failure=0):
         # train 'basic' neural network using the complete data set
-        self.selective_network.fit(features, labels)
+        self.selective_network = self.selective_network.fit(features, labels)
         self.retrained_networks = []
 
-        # retrain one 'new' network for each missing feature (combination):
-        # retrain 'original' network on an incomplete data set, selectively adjusting only nodes affected by the
-        # missing feature(s)
-        for i in range(0, len(features[0])):
-            features_incomplete = np.copy(features)
-            features_incomplete[:, i] = 0
-            retrained_network = copy(self.selective_network)
-            retrained_network.selective_fit(features_incomplete, labels, i, weight_threshold)
-            self.retrained_networks.append(retrained_network)
+        if multi_sensor_failure:
+            no_selected_features = int(len(features[0]) * percentage_of_failure)
+            feature_range = range(0, len(features[0]))
+            np.random.seed(np_seed)
+            for i in range(0, len(features[0])):
+                failure_selection = np.random.choice(feature_range, no_selected_features, replace=False,
+                                                     p=self.p_features).tolist()
+                failure_selection.sort()
+                retrained_network = deepcopy(self.selective_network)
+                features_incomplete = np.copy(features)
+                features_incomplete[:, failure_selection] = 0
+                retrained_network.selective_fit(features_incomplete, labels, failure_selection, weight_threshold)
+                self.retrained_networks.append(retrained_network)
 
-    def predict(self, points, data_frame=False):
+        else:
+            # retrain one 'new' network for each missing feature (combination):
+            # retrain 'original' network on an incomplete data set, selectively adjusting only nodes affected by the
+            # missing feature(s)
+            for i in range(0, len(features[0])):
+                features_incomplete = np.copy(features)
+                features_incomplete[:, i] = 0
+                retrained_network = deepcopy(self.selective_network)
+                retrained_network.selective_fit(features_incomplete, labels, i, weight_threshold)
+                self.retrained_networks.append(retrained_network)
+
+    def predict(self, points, data_frame=False, multi_sensor_failure=False):
         y_predicted = []
         for p in range(0, len(points)):
             # determine if/which feature is missing
             index = np.where(points[p] == 0)
             if not index[0].size:
-                y_predicted.append(self.selective_network.predict(points[p].reshape(1, -1))[0])
-            else:
-                y_predicted.append(self.retrained_networks[index[0][0]].predict(points[p].reshape(1, -1))[0])
+                # if no features is missing, use original network for classification
+                y_predicted.append(self.selective_network.predict([points[p]])[0])
+            elif index[0].size == 1 or not multi_sensor_failure:
+                # if only one feature is missing (or multi_sensor_failure is disabled),
+                # classify with the respective retrained network
+                results = self.retrained_networks[index[0][0]].predict([points[p]])
+                y_predicted.append(results[0])
+            elif multi_sensor_failure:
+                # classify point with specific retrained classifiers for each of the missing features
+                summed_results = [0] * self.selective_network.n_outputs_
+                for f in range(0, index[0].size):
+                    results = self.retrained_networks[index[0][f]].predict_proba([points[p]])
+                    summed_results = [x + y for x, y in zip(summed_results, results[0])]
+                # determine weighted majority vote result
+                prediction = [0] * self.selective_network.n_outputs_
+                prediction[summed_results.index(max(summed_results))] = 1
+                y_predicted.append(prediction)
         if data_frame:
             y_predicted = pd.DataFrame(y_predicted)
         return y_predicted

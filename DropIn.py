@@ -9,7 +9,7 @@ import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn import model_selection
-from sklearn.metrics import classification_report, accuracy_score
+from sklearn.metrics import accuracy_score
 
 
 @np.vectorize
@@ -37,13 +37,16 @@ class DropInNetwork(MLPClassifier):
                  learning_rate_init,
                  p_dropin,
                  hidden_layer_sizes,
-                 random_state):
+                 random_state,
+                 activation):
+        self.seed = None
         self.train_pass = False
         self.dropout_arrays = []
         self.p_dropin = p_dropin
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
                          learning_rate_init=learning_rate_init,
-                         random_state=random_state)
+                         random_state=random_state,
+                         activation=activation)
 
     def _forward_pass(self, activations):
         """Perform a forward pass on the network by computing the values
@@ -84,10 +87,10 @@ class DropInNetwork(MLPClassifier):
 
         return coef_grads, intercept_grads
 
-    def fit_dropin(self, features, labels, np_seed):
+    def fit_dropin(self, features_fit, labels_fit, np_seed):
         self.train_pass = True
         self.seed = np_seed
-        super().fit(features, labels)
+        super().fit(features_fit, labels_fit)
         self.train_pass = False
 
 
@@ -118,7 +121,8 @@ if __name__ == "__main__":
     # LRP - Range
     dropin_network_lrp_r = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
                                          learning_rate_init=learning_rate_init,
-                                         p_dropin=p_dropin_lrp_range)
+                                         p_dropin=p_dropin_lrp_range,
+                                         activation=activation)
     dropin_network_lrp_r.fit_dropin(x_train, y_train)
 
     # simulate random sensor failure
