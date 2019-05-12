@@ -77,37 +77,22 @@ class SelectiveRetrainingCommittee:
                                                             random_state=random_state,
                                                             activation=activation)
 
-    def fit(self, features, labels, weight_threshold, multi_sensor_failure=False, np_seed=7, percentage_of_failure=0):
+    def fit(self, features, labels, weight_threshold):
         # train 'basic' neural network using the complete data set
         self.selective_network = self.selective_network.fit(features, labels)
         self.retrained_networks = []
 
-        if multi_sensor_failure:
-            no_selected_features = int(len(features[0]) * percentage_of_failure)
-            feature_range = range(0, len(features[0]))
-            np.random.seed(np_seed)
-            for i in range(0, len(features[0])):
-                failure_selection = np.random.choice(feature_range, no_selected_features, replace=False,
-                                                     p=self.p_features).tolist()
-                failure_selection.sort()
-                retrained_network = deepcopy(self.selective_network)
-                features_incomplete = np.copy(features)
-                features_incomplete[:, failure_selection] = 0
-                retrained_network.selective_fit(features_incomplete, labels, failure_selection, weight_threshold)
-                self.retrained_networks.append(retrained_network)
+        # retrain one 'new' network for each missing feature (combination):
+        # retrain 'original' network on an incomplete data set, selectively adjusting only nodes affected by the
+        # missing feature(s)
+        for i in range(0, len(features[0])):
+            features_incomplete = np.copy(features)
+            features_incomplete[:, i] = 0
+            retrained_network = deepcopy(self.selective_network)
+            retrained_network.selective_fit(features_incomplete, labels, i, weight_threshold)
+            self.retrained_networks.append(retrained_network)
 
-        else:
-            # retrain one 'new' network for each missing feature (combination):
-            # retrain 'original' network on an incomplete data set, selectively adjusting only nodes affected by the
-            # missing feature(s)
-            for i in range(0, len(features[0])):
-                features_incomplete = np.copy(features)
-                features_incomplete[:, i] = 0
-                retrained_network = deepcopy(self.selective_network)
-                retrained_network.selective_fit(features_incomplete, labels, i, weight_threshold)
-                self.retrained_networks.append(retrained_network)
-
-    def predict(self, points, data_frame=False, multi_sensor_failure=False):
+    def predict(self, points, data_frame=False):
         y_predicted = []
         for p in range(0, len(points)):
             # determine if/which feature is missing
@@ -115,12 +100,7 @@ class SelectiveRetrainingCommittee:
             if not index[0].size:
                 # if no features is missing, use original network for classification
                 y_predicted.append(self.selective_network.predict([points[p]])[0])
-            elif index[0].size == 1 or not multi_sensor_failure:
-                # if only one feature is missing (or multi_sensor_failure is disabled),
-                # classify with the respective retrained network
-                results = self.retrained_networks[index[0][0]].predict([points[p]])
-                y_predicted.append(results[0])
-            elif multi_sensor_failure:
+            else:
                 # classify point with specific retrained classifiers for each of the missing features
                 summed_results = [0] * self.selective_network.n_outputs_
                 for f in range(0, index[0].size):

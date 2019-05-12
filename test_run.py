@@ -8,11 +8,11 @@ from sklearn.metrics import accuracy_score
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP": True,
-                         "Learn++": True,
-                         "DropIn":  True,
+algorithms_to_execute = {"LRP":     False,
+                         "Learn++": False,
+                         "DropIn":  False,
                          "SelectiveRetraining": True}
-data_set = "bank"
+data_set = "iris"
 random_state = 7
 test_size = 0.1
 failure_simulation_np_seed = 7

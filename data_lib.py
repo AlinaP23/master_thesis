@@ -17,9 +17,11 @@ def get_dataset(data_set):
         # Create Input and Output columns
         X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
         Y = iris[['species']].values.ravel()
+        Y = pd.get_dummies(Y)
 
         activation = 'relu'
-        labels = [0, 1, 2]
+        labels = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        data_frame = True
 
     elif data_set == "bank":
         bank = pd.read_csv('./data/bank_data_balanced.csv', delimiter=";")
@@ -37,7 +39,7 @@ def get_dataset(data_set):
 
     elif data_set == "income":
         # https://archive.ics.uci.edu/ml/datasets/Adult
-        income = pd.read_csv('./data/adult.data.csv', delimiter=", ")
+        income = pd.read_csv('./data/adult.data.csv', delimiter=";")
         X = income[['age', 'workclass', 'fnlwgt', 'education-num', 'marital-status', 'occupation',
                     'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']] \
             .values
