@@ -24,11 +24,11 @@ class SelectiveRetrainingNetwork(MLPClassifier):
         features: array of shape [n_samples, n_features]
             Samples to be used for retraining of the NN
         labels: array of shape [n_samples]
-            labels for class membership of each sample
+            Labels for class membership of each sample
         position_missing: integer
-            the position of the feature within the samples that shall be treated as 'missing' during the retraining
+            The position of the feature within the samples that shall be treated as 'missing' during the retraining
         weight_threshold: float
-            determines which of the NN's weights and nodes are considered as affected by the missing feature and
+            Determines which of the NN's weights and nodes are considered as affected by the missing feature and
             readjusted after the backpropagation and loss calculation
         """
         self.retrain_pass = True
@@ -56,7 +56,7 @@ class SelectiveRetrainingNetwork(MLPClassifier):
             z = wx + b is the value of a particular layer before passing through the activation function
         coef_grads : list, length = n_layers - 1
             The ith element contains the amount of change used to update the coefficient parameters of the ith layer in
-             an iteration.
+            an iteration.
         intercept_grads : list, length = n_layers - 1
             The ith element contains the amount of change used to update the intercept parameters of the ith layer in
             an iteration.
@@ -157,7 +157,7 @@ class SelectiveRetrainingCommittee:
         points: array of shape [n_samples, n_features]
             Samples to be classified
         data_frame: boolean
-            Whether the label array to be returned should be transformed to a data frame
+            Indicates whether the label array to be returned should be transformed to a data frame
 
         Returns
         ----------

@@ -13,11 +13,11 @@ algorithms_to_execute = {"LRP":     True,
                          "DropIn":  True,
                          "SelectiveRetraining": True}
 data_set = "sklearn"
-data_set_params = {"n_samples":     500,
+data_set_params = {"n_samples":     50000,
                    "n_features":    15,
-                   "n_informative": 12,
-                   "n_redundant":   1,
-                   "n_repeated":    1,
+                   "n_informative": 15,
+                   "n_redundant":   0,
+                   "n_repeated":    0,
                    "n_classes":     3,
                    "n_clusters_per_class":  2,
                    "weights":       None,
@@ -33,7 +33,7 @@ ms_test_size = 0.1
 failure_simulation_np_seed = 7
 failure_percentage = 0.2
 random_failure = False
-multi_sensor_failure = False
+multi_sensor_failure = True
 
 X, Y, activation, labels, label_df = data_lib.get_data_set(data_set,
                                                            n_samples=data_set_params["n_samples"],
@@ -59,15 +59,15 @@ x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
                                                       multi_sensor_failure=multi_sensor_failure,
                                                       failure_percentage=failure_percentage)
 # LRP
-LRP_hidden_layer_sizes = (15, 15, 15)
+LRP_hidden_layer_sizes = [25, 25, 25]
 LRP_learning_rate_init = 0.1
 LRP_random_states = [5]
 LRP_seed = 7
-LRP_test_size = 0.2
+LRP_test_size = 0.1
 LRP_alpha = 2
 LRP_accuracy_threshold = 0.5
-LRP_dropout_threshold_max = 0.95
-LRP_dropout_threshold_min = 0.1
+LRP_dropout_threshold_max = 0.85
+LRP_dropout_threshold_min = 0.05
 
 # Learn++
 learn_hidden_layer_sizes = [15, 15, 15]
@@ -90,7 +90,7 @@ p_dropin_standard = 0.8
 sr_hidden_layer_sizes = [25, 25, 25]
 sr_learning_rate_init = 0.1
 sr_random_state = 6
-sr_weight_threshold = 0.6
+sr_weight_threshold = 0.7
 
 # --- LRP Score Calculation --- #
 if algorithms_to_execute["LRP"]:

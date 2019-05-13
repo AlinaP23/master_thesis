@@ -70,7 +70,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
     labels: Array
         List of the unique labels of the data set
     data_frame: Boolean
-        whether the labels of the data set are represented in binary format
+        Indicates whether the labels of the data set are represented in binary format
     """
     data_frame = False
     if data_set == "iris":

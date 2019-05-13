@@ -60,9 +60,9 @@ class LearnCommittee:
         features: array of shape [n_samples, n_features]
             Samples to be used for training of the committee
         labels: array of shape [n_samples]
-            labels for class membership of each sample
+            Labels for class membership of each sample
         np_seed: integer
-             Seed to make numpy randomization reproducible.
+            Seed to make numpy randomization reproducible.
         split_seed: integer
             Seed to make random split reproducible.
         """
@@ -115,7 +115,7 @@ class LearnCommittee:
         points: array of shape [n_samples, n_features]
             Samples to be classified
         data_frame: boolean
-            whether the label array to be returned should be transformed to a data frame
+            Indicates whether the label array to be returned should be transformed to a data frame
 
         Returns
         ----------
@@ -135,12 +135,12 @@ class LearnCommittee:
          Parameters
          ----------
          point: array of shape [n_features]
-             Sample to be classified
+            Sample to be classified
 
          Returns
          ----------
          y_predicted: integer
-             Index of the predicted label for the given point
+            Index of the predicted label for the given point
          """
         # determine available features
         available_features = []

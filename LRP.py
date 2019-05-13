@@ -67,9 +67,9 @@ class LRPNetwork:
         features: array of shape [n_samples, n_features]
             Samples to be used for the calculation of the LRP scores
         labels: array of shape [n_samples]
-            labels for class membership of each sample
+            Labels for class membership of each sample
         test_size: float
-            percentage of the samples to be used for testing purposes
+            Percentage of the samples to be used for testing purposes
         seed: integer
             Seed to make numpy randomization reproducible.
         random_states: list
@@ -118,13 +118,13 @@ class LRPNetwork:
         features: array of shape [n_samples, n_features]
             Samples to be used for the calculation of the LRP scores
         labels: array of shape [n_samples]
-            labels for class membership of each sample
+            Labels for class membership of each sample
         test_size: float
-            percentage of the samples to be used for testing purposes
+            Percentage of the samples to be used for testing purposes
         seed: integer
             Seed to make numpy randomization reproducible.
         random_state: list
-            Determine random number generation. Pass an int for reproducible output across multiple function calls.
+            Determines random number generation. Pass an int for reproducible output across multiple function calls.
         alpha: integer
             Determines the weighting of positive and negative influences on a node during LRP score calculation.
             (alpha = weighting of positive values; beta = weighting of negative values (alpha - 1)). Must be >= 0.
@@ -263,12 +263,12 @@ class LRPNetwork:
         Parameters
         ----------
         average_lrp_scores: array of shape [n_features]
-            original average LRP scores per feature
+            Average LRP scores per feature to be normalized to percentages
 
         Returns
         ----------
         average_lrp_scores_normalized: array of shape [n_features]
-            average LRP scores per feature normalized to percentages
+            Average LRP scores per feature normalized to percentages
         """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         sum_lrp_scores = sum(average_lrp_scores)
@@ -283,16 +283,16 @@ class LRPNetwork:
         Parameters
         ----------
         average_lrp_scores: array of shape [n_features]
-            original average LRP scores per feature
+            Average LRP scores per feature to be scaled
         threshold_max: float
-            maximum probability threshold to be assigned to the feature with the highest LRP score
+            Maximum probability threshold to be assigned to the feature with the highest LRP score
 
         Returns
         ----------
         average_lrp_scores_scaled: array of shape [n_features]
-            scaled average LRP scores
+            Scaled average LRP scores
         average_lrp_scores_scaled_inverted: array of shape [n_features]
-            inverted scaled average LRP scores (DropIn probabilities)
+            Inverted scaled average LRP scores (DropIn probabilities)
         """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         max_score = max(average_lrp_scores)
@@ -309,18 +309,18 @@ class LRPNetwork:
         Parameters
         ----------
         average_lrp_scores: array of shape [n_features]
-            original average LRP scores per feature
+            Average LRP scores per feature to be scaled within the given range (min_threshold to max_threshold)
         threshold_max: float
-            maximum probability threshold to be assigned to the feature with the highest LRP score
+            Maximum probability threshold to be assigned to the feature with the highest LRP score
         threshold_min: float
-            minimum probability threshold to be assigned to the feature with the lowest LRP score
+            Minimum probability threshold to be assigned to the feature with the lowest LRP score
 
         Returns
         ----------
         average_lrp_scores_ranged: array of shape [n_features]
-            average LRP scores per feature scaled by range
+            Average LRP scores per feature scaled by range
         average_lrp_scores_scaled_inverted: array of shape [n_features]
-            inverted average LRP scores per feature scaled by range
+            Inverted average LRP scores per feature scaled by range
         """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         max_score = max(average_lrp_scores)

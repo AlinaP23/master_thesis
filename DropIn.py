@@ -99,7 +99,7 @@ class DropInNetwork(MLPClassifier):
         features_fit: array of shape [n_samples, n_features]
             Samples to be used for training of the NN
         labels_fit:  array of shape [n_samples]
-            labels for class membership of each sample
+            Labels for class membership of each sample
         np_seed: integer
              Seed to make numpy randomization reproducible.
         """
