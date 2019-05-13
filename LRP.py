@@ -23,7 +23,7 @@ class CustomMLPClassifier(MLPClassifier):
         y_prediction : array-like, shape (n_samples,) or (n_samples, n_outputs)
             The decision function of the samples for each class in the model.
         activations :  array of shape [m=no_layers, n=no_nodes]
-            node activations
+            Node activations
         """
         data = check_array(data, accept_sparse=['csr', 'csc', 'coo'])
 
@@ -61,6 +61,7 @@ class LRPNetwork:
 
     def avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_states, alpha, accuracy_threshold):
         """ Calculates the average LRP score per feature based on the calculations of several individual networks.
+
         Parameters
         ----------
         features: array of shape [n_samples, n_features]
@@ -111,6 +112,7 @@ class LRPNetwork:
     def single_network_avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_state, alpha,
                                                  threshold):
         """ Calculates the average LRP score per feature within one network.
+
         Parameters
         ----------
         features: array of shape [n_samples, n_features]
@@ -178,6 +180,7 @@ class LRPNetwork:
 
     def lrp_scores(self, network, data, alpha, beta):
         """ Calculates the relevance matrix/LRP score for all nodes during the classification of one sample.
+
         Parameters
         ----------
         network: instance of CustomMLPClassifier
@@ -256,6 +259,7 @@ class LRPNetwork:
     @staticmethod
     def lrp_scores_to_percentage(average_lrp_scores):
         """ Converts the raw LRP scores to percentages. To be used as input to Learn++.
+
         Parameters
         ----------
         average_lrp_scores: array of shape [n_features]
@@ -275,6 +279,7 @@ class LRPNetwork:
     def lrp_scores_to_scaled(average_lrp_scores, threshold_max):
         """ Sets a certain maximum probability threshold to the feature with the highest LRP score and scales all
         further features' scores accordingly. Must be inverted (i.e. 1 - scaled score) to be used as input to DropIn.
+
         Parameters
         ----------
         average_lrp_scores: array of shape [n_features]
@@ -298,8 +303,8 @@ class LRPNetwork:
     @staticmethod
     def lrp_scores_to_scaled_range(average_lrp_scores, threshold_max, threshold_min):
         """ Sets a certain maximum probability threshold to the feature with the highest LRP score and a minimum prob.
-         threshold to the feature with the lowest LRP score. All further features' scores are scaled accordingly.
-         Must be inverted (i.e. 1 - scaled score) to be used as input to DropIn.
+        threshold to the feature with the lowest LRP score. All further features' scores are scaled accordingly.
+        Must be inverted (i.e. 1 - scaled score) to be used as input to DropIn.
 
         Parameters
         ----------
