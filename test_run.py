@@ -8,57 +8,88 @@ from sklearn.metrics import accuracy_score
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     False,
-                         "Learn++": False,
-                         "DropIn":  False,
+algorithms_to_execute = {"LRP":     True,
+                         "Learn++": True,
+                         "DropIn":  True,
                          "SelectiveRetraining": True}
-data_set = "iris"
-random_state = 7
-test_size = 0.1
+data_set = "sklearn"
+data_set_params = {"n_samples":     5000,
+                   "n_features":    15,
+                   "n_informative": 10,
+                   "n_redundant":   2,
+                   "n_repeated":    0,
+                   "n_classes":     3,
+                   "n_clusters_per_class":  2,
+                   "weights":       None,
+                   "flip_y":        0.01,
+                   "class_sep":     1.0,
+                   "hypercube":     True,
+                   "shift":         0.0,
+                   "scale":         1.0,
+                   "data_shuffle":  True,
+                   "random_state":  7}
+ms_random_state = 7
+ms_test_size = 0.1
 failure_simulation_np_seed = 7
 failure_percentage = 0.2
-random = False
+random_failure = False
 multi_sensor_failure = False
-X, Y, activation, labels, label_df = data_lib.get_data_set(data_set)
+
+X, Y, activation, labels, label_df = data_lib.get_data_set(data_set,
+                                                           n_samples=data_set_params["n_samples"],
+                                                           n_features=data_set_params["n_features"],
+                                                           n_informative=data_set_params["n_informative"],
+                                                           n_redundant=data_set_params["n_redundant"],
+                                                           n_repeated=data_set_params["n_repeated"],
+                                                           n_classes=data_set_params["n_classes"],
+                                                           n_clusters_per_class=data_set_params["n_clusters_per_class"],
+                                                           weights=data_set_params["weights"],
+                                                           flip_y=data_set_params["flip_y"],
+                                                           class_sep=data_set_params["class_sep"],
+                                                           hypercube=data_set_params["hypercube"],
+                                                           shift=data_set_params["shift"],
+                                                           scale=data_set_params["scale"],
+                                                           data_shuffle=data_set_params["data_shuffle"],
+                                                           random_state=data_set_params["random_state"])
 x_train, x_test, y_train, y_test = \
-    model_selection.train_test_split(X, Y, test_size=test_size, random_state=random_state, stratify=Y)
+    model_selection.train_test_split(X, Y, test_size=ms_test_size, random_state=ms_random_state, stratify=Y)
 x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
                                                       np_seed=failure_simulation_np_seed,
-                                                      random=random,
+                                                      random=random_failure,
                                                       multi_sensor_failure=multi_sensor_failure,
                                                       failure_percentage=failure_percentage)
 # LRP
 LRP_hidden_layer_sizes = (15, 15, 15)
 LRP_learning_rate_init = 0.1
-LRP_test_size = 0.2
-LRP_seed = 7
 LRP_random_states = [5]
+LRP_seed = 7
+LRP_test_size = 0.2
 LRP_alpha = 2
 LRP_accuracy_threshold = 0.4
 LRP_dropout_threshold_max = 0.95
 LRP_dropout_threshold_min = 0.1
 
 # Learn++
-learn_no_of_weak_classifiers = 20
-learn_percentage_of_features = 0.75
-learn_no_of_features = len(X[0])
-learn_no_of_out_nodes = 2
 learn_hidden_layer_sizes = [10, 10, 10]
 learn_learning_rate_init = 0.1
+learn_random_state = 7
+learn_np_seed = 6
+learn_no_of_out_nodes = 2
+learn_no_of_weak_classifiers = 20
+learn_percentage_of_features = 0.75
 learn_missing_data_representation = None
 learn_p_features_standard = None
-learn_np_seed = 6
 
 # DropIn
 dropin_hidden_layer_sizes = [15, 15, 15]
 dropin_learning_rate_init = 0.1
-p_dropin_standard = 0.8
-dropin_np_seed = 7
 dropin_random_state = 7
+dropin_np_seed = 7
+p_dropin_standard = 0.8
 
 # Selective Retraining
-sr_learning_rate_init = 0.1
 sr_hidden_layer_sizes = [15, 15, 15]
+sr_learning_rate_init = 0.1
 sr_random_state = 6
 sr_weight_threshold = 0.7
 
@@ -94,7 +125,7 @@ if algorithms_to_execute["Learn++"]:
     print("Training Standard Learn++ Committee...")
     learn_committee = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
                                      percentage_of_features=learn_percentage_of_features,
-                                     no_of_features=learn_no_of_features,
+                                     no_of_features=len(X[0]),
                                      no_of_out_nodes=learn_no_of_out_nodes,
                                      hidden_layer_sizes=learn_hidden_layer_sizes,
                                      learning_rate_init=learn_learning_rate_init,
@@ -102,13 +133,13 @@ if algorithms_to_execute["Learn++"]:
                                      missing_data_representation=learn_missing_data_representation,
                                      p_features=learn_p_features_standard,
                                      activation=activation)
-    learn_committee.fit(x_train, y_train, learn_np_seed, random_state)
+    learn_committee.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
     # LRP
     print("Training LRP Learn++ Committee...")
     learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
                                          percentage_of_features=learn_percentage_of_features,
-                                         no_of_features=learn_no_of_features,
+                                         no_of_features=len(X[0]),
                                          no_of_out_nodes=learn_no_of_out_nodes,
                                          hidden_layer_sizes=learn_hidden_layer_sizes,
                                          learning_rate_init=learn_learning_rate_init,
@@ -116,7 +147,7 @@ if algorithms_to_execute["Learn++"]:
                                          missing_data_representation=learn_missing_data_representation,
                                          p_features=avg_lrp_scores_normalized,
                                          activation=activation)
-    learn_committee_lrp.fit(x_train, y_train, learn_np_seed, random_state)
+    learn_committee_lrp.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
     # Validation
     print("Validating Learn++...")
