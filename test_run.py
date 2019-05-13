@@ -13,11 +13,11 @@ algorithms_to_execute = {"LRP":     True,
                          "DropIn":  True,
                          "SelectiveRetraining": True}
 data_set = "sklearn"
-data_set_params = {"n_samples":     5000,
+data_set_params = {"n_samples":     50000,
                    "n_features":    15,
-                   "n_informative": 10,
-                   "n_redundant":   2,
-                   "n_repeated":    0,
+                   "n_informative": 12,
+                   "n_redundant":   1,
+                   "n_repeated":    1,
                    "n_classes":     3,
                    "n_clusters_per_class":  2,
                    "weights":       None,
@@ -65,33 +65,32 @@ LRP_random_states = [5]
 LRP_seed = 7
 LRP_test_size = 0.2
 LRP_alpha = 2
-LRP_accuracy_threshold = 0.4
+LRP_accuracy_threshold = 0.5
 LRP_dropout_threshold_max = 0.95
 LRP_dropout_threshold_min = 0.1
 
 # Learn++
-learn_hidden_layer_sizes = [10, 10, 10]
+learn_hidden_layer_sizes = [15, 15, 15]
 learn_learning_rate_init = 0.1
 learn_random_state = 7
 learn_np_seed = 6
-learn_no_of_out_nodes = 2
-learn_no_of_weak_classifiers = 20
+learn_no_of_weak_classifiers = 30
 learn_percentage_of_features = 0.75
 learn_missing_data_representation = None
 learn_p_features_standard = None
 
 # DropIn
-dropin_hidden_layer_sizes = [15, 15, 15]
+dropin_hidden_layer_sizes = [25, 25, 25]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 7
 dropin_np_seed = 7
 p_dropin_standard = 0.8
 
 # Selective Retraining
-sr_hidden_layer_sizes = [15, 15, 15]
+sr_hidden_layer_sizes = [25, 25, 25]
 sr_learning_rate_init = 0.1
 sr_random_state = 6
-sr_weight_threshold = 0.7
+sr_weight_threshold = 0.6
 
 # --- LRP Score Calculation --- #
 if algorithms_to_execute["LRP"]:
@@ -126,7 +125,7 @@ if algorithms_to_execute["Learn++"]:
     learn_committee = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
                                      percentage_of_features=learn_percentage_of_features,
                                      no_of_features=len(X[0]),
-                                     no_of_out_nodes=learn_no_of_out_nodes,
+                                     no_of_out_nodes=len(labels),
                                      hidden_layer_sizes=learn_hidden_layer_sizes,
                                      learning_rate_init=learn_learning_rate_init,
                                      labels=labels,
@@ -140,7 +139,7 @@ if algorithms_to_execute["Learn++"]:
     learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
                                          percentage_of_features=learn_percentage_of_features,
                                          no_of_features=len(X[0]),
-                                         no_of_out_nodes=learn_no_of_out_nodes,
+                                         no_of_out_nodes=len(labels),
                                          hidden_layer_sizes=learn_hidden_layer_sizes,
                                          learning_rate_init=learn_learning_rate_init,
                                          labels=labels,
