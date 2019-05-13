@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import data_lib
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils import check_array
 from sklearn import model_selection
@@ -11,18 +10,20 @@ class CustomMLPClassifier(MLPClassifier):
 
     def predict_lrp(self, data):
         """ https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/neural_network/multilayer_perceptron.py
-        Predict and calculate LRP values using the trained model
-           Altered scikit-method (sole difference: output activations additionally)
+        Predict and calculate LRP values using the trained model.
+        Altered scikit-method (sole difference: output activations additionally)
 
         Parameters
         ----------
         data : {array-like, sparse matrix}, shape (n_samples, n_features)
-                The input data.
+            The input data.
+
         Returns
-        -------
+        ----------
         y_prediction : array-like, shape (n_samples,) or (n_samples, n_outputs)
-                       The decision function of the samples for each class in the model.
-        activations : node activations (m=no_layers, n=no_nodes)
+            The decision function of the samples for each class in the model.
+        activations :  array of shape [m=no_layers, n=no_nodes]
+            node activations
         """
         data = check_array(data, accept_sparse=['csr', 'csc', 'coo'])
 
@@ -59,6 +60,32 @@ class LRPNetwork:
         self.LRP_scores_regarded = 0
 
     def avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_states, alpha, accuracy_threshold):
+        """ Calculates the average LRP score per feature based on the calculations of several individual networks.
+        Parameters
+        ----------
+        features: array of shape [n_samples, n_features]
+            Samples to be used for the calculation of the LRP scores
+        labels: array of shape [n_samples]
+            labels for class membership of each sample
+        test_size: float
+            percentage of the samples to be used for testing purposes
+        seed: integer
+            Seed to make numpy randomization reproducible.
+        random_states: list
+            Determine random number generation. Pass an int for reproducible output across multiple function calls.
+        alpha: integer
+            Determines the weighting of positive and negative influences on a node during LRP score calculation.
+            (alpha = weighting of positive values; beta = weighting of negative values (alpha - 1))
+        accuracy_threshold: float
+            Determines accuracy threshold a neural network has to achieve to be used during LRP score calculation
+
+        Returns
+        ----------
+        avg_feature_lrp_scores: array of shape [n_features]
+            Lists the average LRP scores per feature
+        highest_performing_network: instance of CustomMLPClassifier
+            The network which scored the highest accuracy
+        """
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
         iterations = len(random_states)
         single_networks = [None] * iterations
@@ -66,7 +93,7 @@ class LRPNetwork:
         network_results = 0
 
         for i in range(0, iterations):
-            print("Iteration:", i)
+            print("Iteration:", i + 1)
             single_network_results, single_networks[i], accuracies[i] = \
                 self.single_network_avg_lrp_score_per_feature(features, labels, test_size, seed, random_states[i],
                                                               alpha, accuracy_threshold)
@@ -83,6 +110,34 @@ class LRPNetwork:
 
     def single_network_avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_state, alpha,
                                                  threshold):
+        """ Calculates the average LRP score per feature within one network.
+        Parameters
+        ----------
+        features: array of shape [n_samples, n_features]
+            Samples to be used for the calculation of the LRP scores
+        labels: array of shape [n_samples]
+            labels for class membership of each sample
+        test_size: float
+            percentage of the samples to be used for testing purposes
+        seed: integer
+            Seed to make numpy randomization reproducible.
+        random_state: list
+            Determine random number generation. Pass an int for reproducible output across multiple function calls.
+        alpha: integer
+            Determines the weighting of positive and negative influences on a node during LRP score calculation.
+            (alpha = weighting of positive values; beta = weighting of negative values (alpha - 1)). Must be >= 0.
+        threshold: float
+            Determines accuracy threshold a neural network has to achieve to be used during LRP score calculation
+
+        Returns
+        ----------
+        avg_feature_lrp_scores: array of shape [n_features]
+            Lists the average LRP scores per feature
+        mlp_network: instance of CustomMLPClassifier
+            The newly trained network
+        accuracy: float
+            The newly trained network's accuracy score
+        """
         # variable definition
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
 
@@ -122,6 +177,24 @@ class LRPNetwork:
             return None, mlp_network, accuracy
 
     def lrp_scores(self, network, data, alpha, beta):
+        """ Calculates the relevance matrix/LRP score for all nodes during the classification of one sample.
+        Parameters
+        ----------
+        network: instance of CustomMLPClassifier
+            The classifier to be used to calculate the LRP scores
+        data: array of shape [n_features]
+            The data sample which shall be used to calculate the LRP scores
+        alpha: integer
+            Determines the weighting of positive influences on a node during LRP score calculation. Must be >= 0.
+        beta: integer
+            Determines the weighting of negative influences on a node during LRP score calculation. Must be alpha - 1.
+
+        Returns
+        ----------
+        relevance_matrix: array of shape [n_layers, n_nodes]
+            Contains the LRP scores for the neural networks nodes, i.e. the relevance of each node during the
+            classification of the given data
+        """
         y_predicted, activation_matrix = network.predict_lrp(data)
         # prepare y_predicted so that only relevance of most probable class is distributed
         y_predicted[np.where(y_predicted != np.max(y_predicted))] = 0
@@ -182,6 +255,17 @@ class LRPNetwork:
 
     @staticmethod
     def lrp_scores_to_percentage(average_lrp_scores):
+        """ Converts the raw LRP scores to percentages. To be used as input to Learn++.
+        Parameters
+        ----------
+        average_lrp_scores: array of shape [n_features]
+            original average LRP scores per feature
+
+        Returns
+        ----------
+        average_lrp_scores_normalized: array of shape [n_features]
+            average LRP scores per feature normalized to percentages
+        """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         sum_lrp_scores = sum(average_lrp_scores)
         average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in average_lrp_scores]
@@ -189,6 +273,22 @@ class LRPNetwork:
 
     @staticmethod
     def lrp_scores_to_scaled(average_lrp_scores, threshold_max):
+        """ Sets a certain maximum probability threshold to the feature with the highest LRP score and scales all
+        further features' scores accordingly. Must be inverted (i.e. 1 - scaled score) to be used as input to DropIn.
+        Parameters
+        ----------
+        average_lrp_scores: array of shape [n_features]
+            original average LRP scores per feature
+        threshold_max: float
+            maximum probability threshold to be assigned to the feature with the highest LRP score
+
+        Returns
+        ----------
+        average_lrp_scores_scaled: array of shape [n_features]
+            scaled average LRP scores
+        average_lrp_scores_scaled_inverted: array of shape [n_features]
+            inverted scaled average LRP scores (DropIn probabilities)
+        """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         max_score = max(average_lrp_scores)
         average_lrp_scores_scaled = [x / max_score * threshold_max for x in average_lrp_scores]
@@ -197,6 +297,26 @@ class LRPNetwork:
 
     @staticmethod
     def lrp_scores_to_scaled_range(average_lrp_scores, threshold_max, threshold_min):
+        """ Sets a certain maximum probability threshold to the feature with the highest LRP score and a minimum prob.
+         threshold to the feature with the lowest LRP score. All further features' scores are scaled accordingly.
+         Must be inverted (i.e. 1 - scaled score) to be used as input to DropIn.
+
+        Parameters
+        ----------
+        average_lrp_scores: array of shape [n_features]
+            original average LRP scores per feature
+        threshold_max: float
+            maximum probability threshold to be assigned to the feature with the highest LRP score
+        threshold_min: float
+            minimum probability threshold to be assigned to the feature with the lowest LRP score
+
+        Returns
+        ----------
+        average_lrp_scores_ranged: array of shape [n_features]
+            average LRP scores per feature scaled by range
+        average_lrp_scores_scaled_inverted: array of shape [n_features]
+            inverted average LRP scores per feature scaled by range
+        """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         max_score = max(average_lrp_scores)
         min_score = min(average_lrp_scores)
@@ -206,55 +326,3 @@ class LRPNetwork:
             [(x - min_score) / lrp_range * threshold_range + threshold_min for x in average_lrp_scores]
         average_lrp_scores_range_inverted = [1 - x for x in average_lrp_scores_range]
         return average_lrp_scores_range, average_lrp_scores_range_inverted
-
-
-if __name__ == "__main__":
-
-    # PARAMETERS:
-    X, Y, activation, labels = data_lib.get_dataset("income")
-    hidden_layer_sizes = (5, 6, 5)
-    learning_rate_init = 0.1
-    test_size = 0.2
-    seed = 7
-    alpha = 1
-    accuracy_threshold = 0.7
-    iterations = 10
-    dropout_threshold_max = 0.9
-    dropout_threshold_min = 0.2
-
-    lrp_nn = LRPNetwork(hidden_layer_sizes=hidden_layer_sizes,
-                        learning_rate_init=learning_rate_init,
-                        no_of_in_nodes=len(X[0]),
-                        activation=activation)
-
-    avg_lrp_scores = lrp_nn.avg_lrp_score_per_feature(features=X,
-                                                      labels=Y,
-                                                      test_size=test_size,
-                                                      seed=seed,
-                                                      alpha=alpha,
-                                                      accuracy_threshold=accuracy_threshold,
-                                                      iterations=iterations)
-
-    print("Number of tuples taken into consideration:")
-    print(lrp_nn.LRP_scores_regarded)
-
-    print("Average LRP Scores per Feature:")
-    print(avg_lrp_scores)
-
-    avg_lrp_scores_normalized = lrp_nn.lrp_scores_to_percentage(avg_lrp_scores)
-    print("Normalized - to be used for Learn++:")
-    print(avg_lrp_scores_normalized)
-
-    avg_lrp_scores_scaled, avg_lrp_scores_scaled_inverted = \
-        lrp_nn.lrp_scores_to_scaled(avg_lrp_scores, dropout_threshold_max)
-    print("Scaled to Dropout probabilities:")
-    print(avg_lrp_scores_scaled)
-    print("Inverted to Dropin probabilities - to be used for DropIn:")
-    print(avg_lrp_scores_scaled_inverted)
-
-    avg_lrp_scores_range, avg_lrp_scores_range_inverted = \
-        lrp_nn.lrp_scores_to_scaled(avg_lrp_scores, dropout_threshold_max, dropout_threshold_min)
-    print("Scaled by range to Dropout prob.:")
-    print(avg_lrp_scores_range)
-    print("Inverted range prob.:")
-    print(avg_lrp_scores_range_inverted)

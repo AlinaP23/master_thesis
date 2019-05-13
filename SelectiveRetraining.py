@@ -142,7 +142,7 @@ class SelectiveRetrainingCommittee:
         # retrain 'original' network on an incomplete data set, selectively adjusting only nodes affected by the
         # missing feature(s)
         for i in range(0, len(features[0])):
-            print("Retraining network ", i)
+            print("Retraining network ", i + 1, " of ", len(features[0]))
             features_incomplete = np.copy(features)
             features_incomplete[:, i] = 0
             retrained_network = deepcopy(self.selective_network)

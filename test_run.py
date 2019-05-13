@@ -13,7 +13,7 @@ algorithms_to_execute = {"LRP":     True,
                          "DropIn":  True,
                          "SelectiveRetraining": True}
 data_set = "sklearn"
-data_set_params = {"n_samples":     50000,
+data_set_params = {"n_samples":     500,
                    "n_features":    15,
                    "n_informative": 12,
                    "n_redundant":   1,
