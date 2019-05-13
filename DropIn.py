@@ -3,33 +3,9 @@ Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
 DropIn: https://arxiv.org/pdf/1705.02643.pdf
 """
 
-import data_lib
-from scipy.stats import truncnorm
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.extmath import safe_sparse_dot
-from sklearn import model_selection
-from sklearn.metrics import accuracy_score
-
-
-@np.vectorize
-def sigmoid(x):
-    return 1 / (1 + np.e ** -x)
-
-
-@np.vectorize
-def relu(x):
-    if x > 0:
-        return x
-    else:
-        return 0
-
-
-activation_function = relu
-
-
-def truncated_normal(mean=0, sd=1, low=0, upp=10):
-    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd)
 
 
 class DropInNetwork(MLPClassifier):
@@ -49,8 +25,10 @@ class DropInNetwork(MLPClassifier):
                          activation=activation)
 
     def _forward_pass(self, activations):
-        """Perform a forward pass on the network by computing the values
-        of the neurons in the hidden layers and the output layer.
+        """Perform a forward pass on the network by computing the values of the neurons in the hidden layers and the
+        output layer. If performed during the training process, DropIn is implemented, i.e. single input nodes are
+        masked to be ignored (during forward pass and in the following backpropagation step).
+
         Parameters
         ----------
         activations : list, length = n_layers - 1
@@ -71,11 +49,37 @@ class DropInNetwork(MLPClassifier):
 
         return activations
 
-    def _compute_loss_grad(self, layer, n_samples, activations, deltas,
-                           coef_grads, intercept_grads):
+    def _compute_loss_grad(self, layer, n_samples, activations, deltas, coef_grads, intercept_grads):
         """Compute the gradient of loss with respect to coefs and intercept for
-        specified layer.
-        This function does backpropagation for the specified one layer.
+        specified layer. This function does backpropagation for the specified one layer.
+
+        Parameters
+        ----------
+        layer : integer
+            Number of the layer for which the loss shall be calculated.
+        n_samples : integer
+            Number of samples for which the loss shall be calculated
+        activations : list, length = n_layers - 1
+            The ith element of the list holds the values of the ith layer.
+        deltas : list, length = n_layers - 1
+            The ith element of the list holds the difference between the activations of the i + 1 layer and the
+            backpropagated error. More specifically, deltas are gradients of loss with respect to z in each layer, where
+            z = wx + b is the value of a particular layer before passing through the activation function
+        coef_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the coefficient parameters of the ith layer in
+            an iteration.
+        intercept_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the intercept parameters of the ith layer in an
+            iteration.
+
+        Returns
+        ----------
+        coef_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the coefficient parameters of the ith layer in
+            an iteration.
+        intercept_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the intercept parameters of the ith layer in an
+            iteration.
         """
 
         coef_grads[layer] = safe_sparse_dot(activations[layer].T,
@@ -88,67 +92,19 @@ class DropInNetwork(MLPClassifier):
         return coef_grads, intercept_grads
 
     def fit_dropin(self, features_fit, labels_fit, np_seed):
+        """ Triggers the training of the DropInNetwork.
+
+        Parameters
+        ----------
+        features_fit: array of shape [n_samples, n_features]
+            Samples to be used for training of the NN
+        labels_fit:  array of shape [n_samples]
+            labels for class membership of each sample
+        np_seed: integer
+             Seed to make numpy randomization reproducible.
+        """
         self.train_pass = True
         self.seed = np_seed
         super().fit(features_fit, labels_fit)
         self.train_pass = False
 
-
-if __name__ == "__main__":
-
-    # NEURAL NETWORKS PARAMETERS
-    X, Y, activation, labels = data_lib.get_dataset("income")
-    x_train, x_test, y_train, y_test = \
-        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
-    hidden_layer_sizes = [10, 10, 10]
-    learning_rate_init = 0.1
-    p_dropin_standard = 0.8
-    p_dropin_lrp = [1.0, 0.9999999925913022, 0.09999999999999998, 0.9999999269954615, 0.9999999953266986, 1.0, 0.9999999996554814, 1.0, 0.9999999998865401, 0.9999952408349287, 1.0, 1.0, 1.0]
-    p_dropin_lrp_range = [0.8, 0.7999999942376795, 0.10000000000000009, 0.7999999432186922, 0.79999999636521, 0.8, 0.7999999997320411, 0.8, 0.7999999999117534, 0.7999962984271668, 0.8, 0.8, 0.8]
-
-    # standard
-    dropin_network = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
-                                   learning_rate_init=learning_rate_init,
-                                   p_dropin=p_dropin_standard)
-    dropin_network.fit_dropin(x_train, y_train)
-
-    # LRP
-    dropin_network_lrp = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
-                                       learning_rate_init=learning_rate_init,
-                                       p_dropin=p_dropin_lrp)
-    dropin_network_lrp.fit_dropin(x_train, y_train)
-
-    # LRP - Range
-    dropin_network_lrp_r = DropInNetwork(hidden_layer_sizes=hidden_layer_sizes,
-                                         learning_rate_init=learning_rate_init,
-                                         p_dropin=p_dropin_lrp_range,
-                                         activation=activation)
-    dropin_network_lrp_r.fit_dropin(x_train, y_train)
-
-    # simulate random sensor failure
-    features = range(0, len(x_test[0]))
-    p_failure = [1/len(x_test[0])] * len(x_test[0])
-    x_test_failure = np.copy(x_test)
-
-    for i in range(0, len(x_test)):
-        sensor_failure = np.random.choice(features, 1, replace=False, p=p_failure).tolist()
-        x_test_failure[i, sensor_failure] = 0
-
-    print("Accuracy Score - DropIn:")
-    predictions = dropin_network.predict(x_test)
-    print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(predictions, y_test))
-
-    predictions_failure = dropin_network.predict(x_test_failure)
-    print("w/o LRP  & w/  Sensor Failure: ", accuracy_score(predictions_failure, y_test))
-
-    predictions_lrp = dropin_network_lrp.predict(x_test)
-    print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(predictions_lrp, y_test))
-
-    predictions_failure_lrp = dropin_network_lrp.predict(x_test_failure)
-    print("w/  LRP  & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))
-
-    predictions_lrp_r = dropin_network_lrp_r.predict(x_test)
-    print("w/  LRPr & w/o Sensor Failure: ", accuracy_score(predictions_lrp_r, y_test))
-
-    predictions_failure_lrp_r = dropin_network_lrp_r.predict(x_test_failure)
-    print("w/  LRPr & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp_r, y_test))

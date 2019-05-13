@@ -2,7 +2,6 @@
 Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
 Learn++: https://www.researchgate.net/profile/Robi_Polikar/publication/4030043_An_Ensemble_of_Classifiers_Approach_for_the_Missing_Feature_Problem/links/004635182ebc2c7955000000/An-Ensemble-of-Classifiers-Approach-for-the-Missing-Feature-Problem.pdf
 """
-import data_lib
 import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
@@ -54,6 +53,19 @@ class LearnCommittee:
                 self.p_features[k] = 1 / self.no_of_features
 
     def fit(self, features, labels, np_seed, split_seed):
+        """Triggers the training of the Learn++-Committee.
+
+        Parameters
+        ----------
+        features: array of shape [n_samples, n_features]
+            Samples to be used for training of the committee
+        labels: array of shape [n_samples]
+            labels for class membership of each sample
+        np_seed: integer
+             Seed to make numpy randomization reproducible.
+        split_seed: integer
+            Seed to make random split reproducible.
+        """
         x_weak_train, x_weak_test, y_weak_train, y_weak_test = \
             model_selection.train_test_split(features, labels, test_size=0.1, random_state=split_seed, stratify=labels)
         no_selected_features = int(self.no_of_features * self.percentage_of_features)
@@ -96,6 +108,20 @@ class LearnCommittee:
                     self.p_features[i] = self.p_features[i] * 1 / self.no_of_features
 
     def predict(self, points, data_frame=False):
+        """Classify the given input using the Learn++-Committee.
+
+        Parameters
+        ----------
+        points: array of shape [n_samples, n_features]
+            Samples to be classified
+        data_frame: boolean
+            whether the label array to be returned should be transformed to a data frame
+
+        Returns
+        ----------
+        y_predicted: array of shape [n_samples]
+            Predicted labels for the given points
+        """
         y_predicted = [None] * len(points)
         for p in range(0, len(points)):
             y_predicted[p] = self.labels[self.run(points[p])]
@@ -104,6 +130,18 @@ class LearnCommittee:
         return y_predicted
 
     def run(self, point):
+        """Classify the a single sample via majority vote of the committee's weak classifiers.
+
+         Parameters
+         ----------
+         point: array of shape [n_features]
+             Sample to be classified
+
+         Returns
+         ----------
+         y_predicted: integer
+             Index of the predicted label for the given point
+         """
         # determine available features
         available_features = []
         for i in range(0, len(point)):
@@ -129,68 +167,3 @@ class LearnCommittee:
 
         return maj_vote_result
 
-
-if __name__ == "__main__":
-
-    # NEURAL NETWORKS PARAMETERS
-    X, Y, activation, labels, df = data_lib.get_dataset("income_balanced")
-    x_train, x_test, y_train, y_test = \
-        model_selection.train_test_split(X, Y, test_size=0.1, random_state=7)
-    no_of_weak_classifiers = 20
-    percentage_of_features = 0.75
-    no_of_features = 11
-    no_of_out_nodes = 2
-    hidden_layer_sizes = [10, 10, 10]
-    learning_rate_init = 0.1
-    missing_data_representation = None
-    p_features_standard = None
-    p_features_lrp = [0.10978557321856618, 0.00027106375508642664, 0.03430786860896587, 0.00038687784441835435, 0.015654049184339644, 0.03579527808696914, 0.03172297744281773, 0.026642890424175496, 0.00021599391855117817, 0.07887582322402446, 0.6663416042920856]
-    # prob. of features to be chosen by classifier (should sum up to 1)
-
-    # standard
-    learn_committee = LearnCommittee(no_of_weak_classifiers=no_of_weak_classifiers,
-                                     percentage_of_features=percentage_of_features,
-                                     no_of_features=no_of_features,
-                                     no_of_out_nodes=no_of_out_nodes,
-                                     hidden_layer_sizes=hidden_layer_sizes,
-                                     learning_rate_init=learning_rate_init,
-                                     labels=labels,
-                                     missing_data_representation=missing_data_representation,
-                                     p_features=p_features_standard,
-                                     activation=activation)
-    learn_committee.fit(x_train, y_train)
-
-    # LRP
-    learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=no_of_weak_classifiers,
-                                         percentage_of_features=percentage_of_features,
-                                         no_of_features=no_of_features,
-                                         no_of_out_nodes=no_of_out_nodes,
-                                         hidden_layer_sizes=hidden_layer_sizes,
-                                         learning_rate_init=learning_rate_init,
-                                         labels=labels,
-                                         missing_data_representation=missing_data_representation,
-                                         p_features=p_features_lrp,
-                                         activation=activation)
-    learn_committee_lrp.fit(x_train, y_train)
-
-    # simulate random sensor failure
-    features = range(0, len(x_test[0]))
-    p_failure = [1/len(x_test[0])] * len(x_test[0])
-    x_test_failure = np.copy(x_test)
-
-    for i in range(0, len(x_test)):
-        sensor_failure = np.random.choice(features, 1, replace=False, p=p_failure).tolist()
-        x_test_failure[i, sensor_failure] = 0
-
-    print("Accuracy Score - Learn++:")
-    predictions = learn_committee.predict(x_test, df)
-    print("w/o LRP & w/o Sensor Failure: ", accuracy_score(predictions, y_test))
-
-    predictions_failure = learn_committee.predict(x_test_failure, df)
-    print("w/o LRP & w/  Sensor Failure: ", accuracy_score(predictions_failure, y_test))
-
-    predictions_lrp = learn_committee_lrp.predict(x_test, df)
-    print("w/ LRP  & w/o Sensor Failure: ", accuracy_score(predictions_lrp, y_test))
-
-    predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure, df)
-    print("w/ LRP  & w/  Sensor Failure: ", accuracy_score(predictions_failure_lrp, y_test))

@@ -1,9 +1,6 @@
 import numpy as np
 import pandas as pd
-import data_lib
 from sklearn.neural_network import MLPClassifier
-from sklearn import model_selection
-from sklearn.metrics import accuracy_score
 from copy import deepcopy
 
 
@@ -18,6 +15,22 @@ class SelectiveRetrainingNetwork(MLPClassifier):
                          activation=activation)
 
     def selective_fit(self, features, labels, position_missing, weight_threshold):
+        """ Triggering the selective retraining process. The network will be retrained on an incomplete training set
+        (missing feature determined by position_missing). Only nodes, weights and intercepts which are 'affected' by
+        the missing feature are readjusted.
+
+        Parameters
+        ----------
+        features: array of shape [n_samples, n_features]
+            Samples to be used for retraining of the NN
+        labels: array of shape [n_samples]
+            labels for class membership of each sample
+        position_missing: integer
+            the position of the feature within the samples that shall be treated as 'missing' during the retraining
+        weight_threshold: float
+            determines which of the NN's weights and nodes are considered as affected by the missing feature and
+            readjusted after the backpropagation and loss calculation
+        """
         self.retrain_pass = True
         self.position_missing = position_missing
         self.weight_threshold = weight_threshold
@@ -25,6 +38,35 @@ class SelectiveRetrainingNetwork(MLPClassifier):
         self.retrain_pass = False
 
     def _backprop(self, x, y, activations, deltas, coef_grads, intercept_grads):
+        """Compute the loss function and its corresponding derivatives with respect to each parameter: weights and bias
+        vectors. In case this function is called during a selective retraining step, calculations are restricted to
+        the derivatives for affected nodes only.
+
+        Parameters
+        ----------
+        x : {array-like, sparse matrix}, shape [n_samples, n_features]
+            The input data.
+        y : array of shape [n_samples]
+            The target values.
+        activations : list, length = n_layers - 1
+            The ith element of the list holds the values of the ith layer.
+        deltas : list, length = n_layers - 1
+            The ith element of the list holds the difference between the activations of the i + 1 layer and the
+            backpropagated error. More specifically, deltas are gradients of loss with respect to z in each layer, where
+            z = wx + b is the value of a particular layer before passing through the activation function
+        coef_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the coefficient parameters of the ith layer in
+             an iteration.
+        intercept_grads : list, length = n_layers - 1
+            The ith element contains the amount of change used to update the intercept parameters of the ith layer in
+            an iteration.
+
+        Returns
+        -------
+        loss : float
+        coef_grads : list, length = n_layers - 1
+        intercept_grads : list, length = n_layers - 1
+        """
         if self.retrain_pass:
             # normalize weight threshold
             maxs = []
@@ -78,6 +120,20 @@ class SelectiveRetrainingCommittee:
                                                             activation=activation)
 
     def fit(self, features, labels, weight_threshold):
+        """ Triggering the committee training process. In a first step, an 'original' neural network is trained on the
+        complete training data. Subsequently, for each of the features, the 'original' NN is copied and retrained on
+        the adjusted training data missing the respective feature.
+
+        Parameters
+        ----------
+        features: array of shape [n_samples, n_features]
+            Samples to be used for training of the NNs
+        labels: array of shape [n_samples]
+            Labels for class membership of each sample
+        weight_threshold: float
+            Determines which of the NN's weights and nodes are considered as affected by the missing feature and
+            readjusted after the backpropagation and loss calculation (to be forwarded to the retraining process)
+        """
         # train 'basic' neural network using the complete data set
         self.selective_network = self.selective_network.fit(features, labels)
         self.retrained_networks = []
@@ -93,6 +149,20 @@ class SelectiveRetrainingCommittee:
             self.retrained_networks.append(retrained_network)
 
     def predict(self, points, data_frame=False):
+        """Classify the given input using the retraining committee.
+
+        Parameters
+        ----------
+        points: array of shape [n_samples, n_features]
+            Samples to be classified
+        data_frame: boolean
+            Whether the label array to be returned should be transformed to a data frame
+
+        Returns
+        ----------
+        y_predicted: array of shape [n_samples]
+            Predicted labels for the given points
+        """
         y_predicted = []
         for p in range(0, len(points)):
             # determine if/which feature is missing
@@ -115,45 +185,20 @@ class SelectiveRetrainingCommittee:
         return y_predicted
 
     def predict_without_retraining(self, points):
+        """Classify the given input using the 'originial' network trained on the complete data set only.
+
+        Parameters
+        ----------
+        points: array of shape [n_samples, n_features]
+            Samples to be classified
+
+        Returns
+        ----------
+        y_predicted: array of shape [n_samples]
+            Predicted labels for the given points
+        """
         predictions = self.selective_network.predict(points)
 
         return predictions
 
-
-if __name__ == "__main__":
-    data_set = "bank"
-    test_size = 0.1
-    random_state = 7
-    failure_simulation_np_seed = 7
-    X, Y, activation, labels, label_df = data_lib.get_dataset(data_set)
-    x_train, x_test, y_train, y_test = \
-        model_selection.train_test_split(X, Y, test_size=test_size, random_state=random_state)
-    x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
-                                                          np_seed=failure_simulation_np_seed,
-                                                          random=False,
-                                                          multi_sensor_failure=False)
-    sr_learning_rate_init = 0.1
-    sr_hidden_layer_sizes = [10, 10, 10]
-    sr_random_state = 7
-    sr_weight_threshold = 0.7
-
-    selective_committee = SelectiveRetrainingCommittee(learning_rate_init=sr_learning_rate_init,
-                                                       hidden_layer_sizes=sr_hidden_layer_sizes,
-                                                       random_state=sr_random_state,
-                                                       activation=activation)
-
-    selective_committee.fit(x_train, y_train, sr_weight_threshold)
-    sr_predictions = selective_committee.predict(x_test, label_df)
-    sr_predictions_failure = selective_committee.predict(x_test_failure, label_df)
-
-    original_predictions = selective_committee.predict_without_retraining(x_test)
-    original_predictions_failure = selective_committee.predict_without_retraining(x_test_failure)
-
-    print("Accuracy Score - Without Retraining: ")
-    print("           w/o Sensor Failure: ", accuracy_score(original_predictions, y_test))
-    print("           w/  Sensor Failure: ", accuracy_score(original_predictions_failure, y_test))
-
-    print("Accuracy Score - Selective Retraining: ")
-    print("           w/o Sensor Failure: ", accuracy_score(sr_predictions, y_test))
-    print("           w/  Sensor Failure: ", accuracy_score(sr_predictions_failure, y_test))
 

@@ -19,7 +19,7 @@ failure_simulation_np_seed = 7
 failure_percentage = 0.2
 random = False
 multi_sensor_failure = False
-X, Y, activation, labels, label_df = data_lib.get_dataset(data_set)
+X, Y, activation, labels, label_df = data_lib.get_data_set(data_set)
 x_train, x_test, y_train, y_test = \
     model_selection.train_test_split(X, Y, test_size=test_size, random_state=random_state, stratify=Y)
 x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
