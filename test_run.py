@@ -9,15 +9,15 @@ from sklearn.metrics import accuracy_score
 # --- PARAMETERS --- #
 # General
 algorithms_to_execute = {"LRP":     True,
-                         "Learn++": True,
-                         "DropIn":  True,
+                         "Learn++": False,
+                         "DropIn":  False,
                          "SelectiveRetraining": True}
 data_set = "sklearn"
 data_set_params = {"n_samples":     50000,
                    "n_features":    15,
-                   "n_informative": 15,
-                   "n_redundant":   0,
-                   "n_repeated":    0,
+                   "n_informative": 8,
+                   "n_redundant":   3,
+                   "n_repeated":    2,
                    "n_classes":     3,
                    "n_clusters_per_class":  2,
                    "weights":       None,
@@ -82,14 +82,14 @@ learn_p_features_standard = None
 # DropIn
 dropin_hidden_layer_sizes = [25, 25, 25]
 dropin_learning_rate_init = 0.1
-dropin_random_state = 7
-dropin_np_seed = 7
+dropin_random_state = 5
+dropin_np_seed = 5
 p_dropin_standard = 0.8
 
 # Selective Retraining
 sr_hidden_layer_sizes = [25, 25, 25]
 sr_learning_rate_init = 0.1
-sr_random_state = 6
+sr_random_state = 5
 sr_weight_threshold = 0.7
 
 # --- LRP Score Calculation --- #
@@ -112,7 +112,7 @@ if algorithms_to_execute["LRP"]:
     lrp_predictions_failure = mlp_network.predict(x_test_failure)
 
     print("Transforming LRP Scores...")
-    avg_lrp_scores_normalized = lrp_nn.lrp_scores_to_percentage(avg_lrp_scores)
+    avg_lrp_scores_normalized, avg_lrp_scores_normalized_inverted = lrp_nn.lrp_scores_to_percentage(avg_lrp_scores)
     avg_lrp_scores_scaled, avg_lrp_scores_scaled_inverted = \
         lrp_nn.lrp_scores_to_scaled(avg_lrp_scores, LRP_dropout_threshold_max)
     avg_lrp_scores_range, avg_lrp_scores_range_inverted = \
@@ -134,26 +134,28 @@ if algorithms_to_execute["Learn++"]:
                                      activation=activation)
     learn_committee.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
-    # LRP
-    print("Training LRP Learn++ Committee...")
-    learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
-                                         percentage_of_features=learn_percentage_of_features,
-                                         no_of_features=len(X[0]),
-                                         no_of_out_nodes=len(labels),
-                                         hidden_layer_sizes=learn_hidden_layer_sizes,
-                                         learning_rate_init=learn_learning_rate_init,
-                                         labels=labels,
-                                         missing_data_representation=learn_missing_data_representation,
-                                         p_features=avg_lrp_scores_normalized,
-                                         activation=activation)
-    learn_committee_lrp.fit(x_train, y_train, learn_np_seed, learn_random_state)
+    if algorithms_to_execute["LRP"]:
+        # LRP
+        print("Training LRP Learn++ Committee...")
+        learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
+                                             percentage_of_features=learn_percentage_of_features,
+                                             no_of_features=len(X[0]),
+                                             no_of_out_nodes=len(labels),
+                                             hidden_layer_sizes=learn_hidden_layer_sizes,
+                                             learning_rate_init=learn_learning_rate_init,
+                                             labels=labels,
+                                             missing_data_representation=learn_missing_data_representation,
+                                             p_features=avg_lrp_scores_normalized,
+                                             activation=activation)
+        learn_committee_lrp.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
     # Validation
     print("Validating Learn++...")
     learn_predictions = learn_committee.predict(x_test, label_df)
     learn_predictions_failure = learn_committee.predict(x_test_failure, label_df)
-    learn_predictions_lrp = learn_committee_lrp.predict(x_test, label_df)
-    learn_predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure, label_df)
+    if algorithms_to_execute["LRP"]:
+        learn_predictions_lrp = learn_committee_lrp.predict(x_test, label_df)
+        learn_predictions_failure_lrp = learn_committee_lrp.predict(x_test_failure, label_df)
 
 # --- DropIn --- #
 if algorithms_to_execute["DropIn"]:
@@ -166,32 +168,34 @@ if algorithms_to_execute["DropIn"]:
                                    activation=activation)
     dropin_network.fit_dropin(x_train, y_train, dropin_np_seed)
 
-    # LRP
-    print("Training LRP DropIn (scaled)...")
-    dropin_network_lrp = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
-                                       learning_rate_init=dropin_learning_rate_init,
-                                       p_dropin=avg_lrp_scores_scaled_inverted,
-                                       random_state=dropin_random_state,
-                                       activation=activation)
-    dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed)
+    if algorithms_to_execute["LRP"]:
+        # LRP
+        print("Training LRP DropIn (scaled)...")
+        dropin_network_lrp = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
+                                           learning_rate_init=dropin_learning_rate_init,
+                                           p_dropin=avg_lrp_scores_scaled_inverted,
+                                           random_state=dropin_random_state,
+                                           activation=activation)
+        dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed)
 
-    # LRP - Range
-    print("Training LRP DropIn (range)...")
-    dropin_network_lrp_r = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
-                                         learning_rate_init=dropin_learning_rate_init,
-                                         p_dropin=avg_lrp_scores_range_inverted,
-                                         random_state=dropin_random_state,
-                                         activation=activation)
-    dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed)
+        # LRP - Range
+        print("Training LRP DropIn (range)...")
+        dropin_network_lrp_r = DropInNetwork(hidden_layer_sizes=dropin_hidden_layer_sizes,
+                                             learning_rate_init=dropin_learning_rate_init,
+                                             p_dropin=avg_lrp_scores_range_inverted,
+                                             random_state=dropin_random_state,
+                                             activation=activation)
+        dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed)
 
     # Validation
     print("Validating DropIn...")
     dropin_predictions = dropin_network.predict(x_test)
     dropin_predictions_failure = dropin_network.predict(x_test_failure)
-    dropin_predictions_lrp = dropin_network_lrp.predict(x_test)
-    dropin_predictions_failure_lrp = dropin_network_lrp.predict(x_test_failure)
-    dropin_predictions_lrp_r = dropin_network_lrp_r.predict(x_test)
-    dropin_predictions_failure_lrp_r = dropin_network_lrp_r.predict(x_test_failure)
+    if algorithms_to_execute["LRP"]:
+        dropin_predictions_lrp = dropin_network_lrp.predict(x_test)
+        dropin_predictions_failure_lrp = dropin_network_lrp.predict(x_test_failure)
+        dropin_predictions_lrp_r = dropin_network_lrp_r.predict(x_test)
+        dropin_predictions_failure_lrp_r = dropin_network_lrp_r.predict(x_test_failure)
 
 # --- Selective Retraining --- #
 if algorithms_to_execute["SelectiveRetraining"]:
@@ -208,6 +212,10 @@ if algorithms_to_execute["SelectiveRetraining"]:
     sr_original_predictions_failure = selective_committee.predict_without_retraining(x_test_failure)
     sr_predictions = selective_committee.predict(x_test, label_df)
     sr_predictions_failure = selective_committee.predict(x_test_failure, label_df)
+    if algorithms_to_execute["LRP"]:
+        sr_predictions_lrp = selective_committee.predict(x_test, label_df, avg_lrp_scores_normalized_inverted)
+        sr_predictions_failure_lrp = \
+            selective_committee.predict(x_test_failure, label_df, avg_lrp_scores_normalized_inverted)
 
 # --- PRINT RESULTS --- #
 print("Data Set: ", data_set)
@@ -218,6 +226,8 @@ if algorithms_to_execute["LRP"]:
     print(avg_lrp_scores)
     print("Normalized - to be used for Learn++:")
     print(avg_lrp_scores_normalized)
+    print("Inverted normalized - to be used for Selective Retraining:")
+    print(avg_lrp_scores_normalized_inverted)
     print("Scaled to Dropout probabilities:")
     print(avg_lrp_scores_scaled)
     print("Inverted to Dropin probabilities - to be used for DropIn:")
@@ -235,17 +245,19 @@ if algorithms_to_execute["Learn++"]:
     print("Accuracy Score - Learn++:")
     print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(learn_predictions, y_test))
     print("w/o LRP  & w/  Sensor Failure: ", accuracy_score(learn_predictions_failure, y_test))
-    print("w/ LRP   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp, y_test))
-    print("w/ LRP   & w/  Sensor Failure: ", accuracy_score(learn_predictions_failure_lrp, y_test))
+    if algorithms_to_execute["LRP"]:
+        print("w/ LRP   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp, y_test))
+        print("w/ LRP   & w/  Sensor Failure: ", accuracy_score(learn_predictions_failure_lrp, y_test))
 
 if algorithms_to_execute["DropIn"]:
     print("Accuracy Score - DropIn:")
     print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions, y_test))
     print("w/o LRP  & w/  Sensor Failure: ", accuracy_score(dropin_predictions_failure, y_test))
-    print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp, y_test))
-    print("w/  LRP  & w/  Sensor Failure: ", accuracy_score(dropin_predictions_failure_lrp, y_test))
-    print("w/  LRPr & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp_r, y_test))
-    print("w/  LRPr & w/  Sensor Failure: ", accuracy_score(dropin_predictions_failure_lrp_r, y_test))
+    if algorithms_to_execute["LRP"]:
+        print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp, y_test))
+        print("w/  LRP  & w/  Sensor Failure: ", accuracy_score(dropin_predictions_failure_lrp, y_test))
+        print("w/  LRPr & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp_r, y_test))
+        print("w/  LRPr & w/  Sensor Failure: ", accuracy_score(dropin_predictions_failure_lrp_r, y_test))
 
 if algorithms_to_execute["SelectiveRetraining"]:
     print("Accuracy Score - Selective Retraining:")
@@ -253,5 +265,8 @@ if algorithms_to_execute["SelectiveRetraining"]:
     print("           w/o Sensor Failure: ", accuracy_score(sr_original_predictions, y_test))
     print("           w/  Sensor Failure: ", accuracy_score(sr_original_predictions_failure, y_test))
     print("Accuracy Score - Selective Retraining: ")
-    print("           w/o Sensor Failure: ", accuracy_score(sr_predictions, y_test))
-    print("           w/  Sensor Failure: ", accuracy_score(sr_predictions_failure, y_test))
+    print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions, y_test))
+    print("w/o LRP  & w/  Sensor Failure: ", accuracy_score(sr_predictions_failure, y_test))
+    if algorithms_to_execute["LRP"]:
+        print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions_lrp, y_test))
+        print("w/  LRP  & w/  Sensor Failure: ", accuracy_score(sr_predictions_failure_lrp, y_test))

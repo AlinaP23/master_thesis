@@ -273,7 +273,8 @@ class LRPNetwork:
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         sum_lrp_scores = sum(average_lrp_scores)
         average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in average_lrp_scores]
-        return average_lrp_scores_normalized
+        average_lrp_scores_normalized_inverted = [1 - x for x in average_lrp_scores_normalized]
+        return average_lrp_scores_normalized, average_lrp_scores_normalized_inverted
 
     @staticmethod
     def lrp_scores_to_scaled(average_lrp_scores, threshold_max):

@@ -149,8 +149,10 @@ class SelectiveRetrainingCommittee:
             retrained_network.selective_fit(features_incomplete, labels, i, weight_threshold)
             self.retrained_networks.append(retrained_network)
 
-    def predict(self, points, data_frame=False):
-        """Classify the given input using the retraining committee.
+    def predict(self, points, data_frame=False, lrp_weights_inverted=None):
+        """Classify the given input using the retraining committee. If no features is missing for a data point, use
+        original network for classification only. If data is missing, classify the point with specific retrained
+        classifiers for each of the missing features and return the majority vote (weighted if LRP weights are given).
 
         Parameters
         ----------
@@ -158,6 +160,8 @@ class SelectiveRetrainingCommittee:
             Samples to be classified
         data_frame: boolean
             Indicates whether the label array to be returned should be transformed to a data frame
+        lrp_weights_inverted: None or array of shape [n_features]
+            Inverted individual features' LRP scores in percentage (1 - LRP score)
 
         Returns
         ----------
@@ -174,8 +178,14 @@ class SelectiveRetrainingCommittee:
             else:
                 # classify point with specific retrained classifiers for each of the missing features
                 summed_results = [0] * self.selective_network.n_outputs_
+                if lrp_weights_inverted is not None:
+                    # calculate sum of inverted LRP weights for normalization purposes
+                    summed_weights = sum(lrp_weights_inverted[index[0]])
                 for f in range(0, index[0].size):
                     results = self.retrained_networks[index[0][f]].predict_proba([points[p]])
+                    if lrp_weights_inverted is not None:
+                        # weight predictions according to inverted LRP scores
+                        results = [x/summed_weights * lrp_weights_inverted[index[0][f]] for x in results]
                     summed_results = [x + y for x, y in zip(summed_results, results[0])]
                 # determine weighted majority vote result
                 prediction = [0] * self.selective_network.n_outputs_
@@ -186,7 +196,7 @@ class SelectiveRetrainingCommittee:
         return y_predicted
 
     def predict_without_retraining(self, points):
-        """Classify the given input using the 'originial' network trained on the complete data set only.
+        """Classify the given input using the 'original' network trained on the complete data set only.
 
         Parameters
         ----------
