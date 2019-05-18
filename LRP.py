@@ -269,11 +269,18 @@ class LRPNetwork:
         ----------
         average_lrp_scores_normalized: array of shape [n_features]
             Average LRP scores per feature normalized to percentages
+        average_lrp_scores_normalized_inverted: array of shape [n_features]
+            Inverted average LRP scores per feature normalized to percentage
         """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         sum_lrp_scores = sum(average_lrp_scores)
         average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in average_lrp_scores]
-        average_lrp_scores_normalized_inverted = [1 - x for x in average_lrp_scores_normalized]
+
+        average_lrp_scores_normalized_inverted = [sum_lrp_scores - x for x in average_lrp_scores]
+        sum_lrp_scores_inverted = sum(average_lrp_scores_normalized_inverted)
+        average_lrp_scores_normalized_inverted = \
+            [round(x / sum_lrp_scores_inverted, 5) for x in average_lrp_scores_normalized_inverted]
+
         return average_lrp_scores_normalized, average_lrp_scores_normalized_inverted
 
     @staticmethod

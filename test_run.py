@@ -9,13 +9,13 @@ from sklearn.metrics import accuracy_score
 # --- PARAMETERS --- #
 # General
 algorithms_to_execute = {"LRP":     True,
-                         "Learn++": False,
-                         "DropIn":  False,
+                         "Learn++": True,
+                         "DropIn":  True,
                          "SelectiveRetraining": True}
 data_set = "sklearn"
 data_set_params = {"n_samples":     50000,
                    "n_features":    15,
-                   "n_informative": 8,
+                   "n_informative": 9,
                    "n_redundant":   3,
                    "n_repeated":    2,
                    "n_classes":     3,
@@ -61,7 +61,7 @@ x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
 # LRP
 LRP_hidden_layer_sizes = [25, 25, 25]
 LRP_learning_rate_init = 0.1
-LRP_random_states = [5]
+LRP_random_states = [9]
 LRP_seed = 7
 LRP_test_size = 0.1
 LRP_alpha = 2
@@ -89,7 +89,7 @@ p_dropin_standard = 0.8
 # Selective Retraining
 sr_hidden_layer_sizes = [25, 25, 25]
 sr_learning_rate_init = 0.1
-sr_random_state = 5
+sr_random_state = 9
 sr_weight_threshold = 0.7
 
 # --- LRP Score Calculation --- #
