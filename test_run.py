@@ -12,7 +12,7 @@ algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
                          "DropIn":  True,
                          "SelectiveRetraining": True}
-data_set = "sklearn"
+data_set = "gas_sensor_array_drift"
 data_set_params = {"n_samples":     50000,
                    "n_features":    15,
                    "n_informative": 9,
@@ -59,13 +59,13 @@ x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
                                                       multi_sensor_failure=multi_sensor_failure,
                                                       failure_percentage=failure_percentage)
 # LRP
-LRP_hidden_layer_sizes = [25, 25, 25]
+LRP_hidden_layer_sizes = [70, 70, 70]
 LRP_learning_rate_init = 0.1
-LRP_random_states = [9]
-LRP_seed = 7
+LRP_random_states = [7]
+LRP_seed = 8
 LRP_test_size = 0.1
 LRP_alpha = 2
-LRP_accuracy_threshold = 0.5
+LRP_accuracy_threshold = 0.3
 LRP_dropout_threshold_max = 0.85
 LRP_dropout_threshold_min = 0.05
 
@@ -80,10 +80,10 @@ learn_missing_data_representation = None
 learn_p_features_standard = None
 
 # DropIn
-dropin_hidden_layer_sizes = [25, 25, 25]
+dropin_hidden_layer_sizes = [70, 70, 70]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 5
-dropin_np_seed = 5
+dropin_np_seed = 8
 p_dropin_standard = 0.8
 
 # Selective Retraining
@@ -203,7 +203,8 @@ if algorithms_to_execute["SelectiveRetraining"]:
     selective_committee = SelectiveRetrainingCommittee(learning_rate_init=sr_learning_rate_init,
                                                        hidden_layer_sizes=sr_hidden_layer_sizes,
                                                        random_state=sr_random_state,
-                                                       activation=activation)
+                                                       activation=activation,
+                                                       labels=labels)
     selective_committee.fit(x_train, y_train, sr_weight_threshold)
 
     # Validation

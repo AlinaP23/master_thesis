@@ -141,6 +141,25 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         labels = [[1, 0], [0, 1]]
         data_frame = True
 
+    elif data_set == "gas_sensor_array_drift":
+        # https://archive.ics.uci.edu/ml/datasets/Gas+Sensor+Array+Drift+Dataset+at+Different+Concentrations
+        sensor_data = pd.read_csv('./data/gas_sensor_array_drift/batch1.dat', delimiter=" ", header=None)
+        sensor_data = sensor_data.append(pd.read_csv('./data/gas_sensor_array_drift/batch2.dat', delimiter=" ", header=None))
+        sensor_data = sensor_data.append(pd.read_csv('./data/gas_sensor_array_drift/batch3.dat', delimiter=" ", header=None))
+
+        sensor_data = shuffle(sensor_data, random_state=random_state)
+        for c in sensor_data.columns.values:
+            if c == 0:
+                Y = sensor_data[c].apply(lambda x: float(str(x).split(';')[0]))
+                sensor_data[c] = sensor_data[c].apply(lambda x: float(str(x).split(';')[1]))
+            elif c < 129:
+                sensor_data[c] = sensor_data[c].apply(lambda x: float(str(x).split(':')[1]))
+
+        X = sensor_data.iloc[:, 0:129].values
+
+        activation = 'logistic'
+        labels = [1, 2, 3, 4, 5, 6]
+
     elif data_set == "sklearn":
         X, Y = make_classification(n_samples=n_samples,
                                    n_features=n_features,

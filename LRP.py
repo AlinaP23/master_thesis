@@ -148,6 +148,8 @@ class LRPNetwork:
 
         if isinstance(y_test, pd.DataFrame):
             y_test = y_test.values
+        elif isinstance(y_test, pd.Series):
+            y_test = pd.Series.tolist(y_test)
 
         # train neural network
         mlp_network = CustomMLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
@@ -166,7 +168,7 @@ class LRPNetwork:
             for j in range(0, len(y_test)):
                 print("LRP Calculation ", j, " of ", len(y_test))
                 self.LRP_scores_regarded += 1
-                if y_test[j].all() == predictions[j].all():
+                if (isinstance(y_test[j], list) and y_test[j].all() == predictions[j].all()) or y_test[j] == predictions[j]:
                     lrp_iterations += 1
                     feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
                     avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]

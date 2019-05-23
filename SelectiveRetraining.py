@@ -112,8 +112,9 @@ class SelectiveRetrainingNetwork(MLPClassifier):
 
 
 class SelectiveRetrainingCommittee:
-    def __init__(self, learning_rate_init, hidden_layer_sizes, random_state, activation):
+    def __init__(self, learning_rate_init, hidden_layer_sizes, random_state, activation, labels):
         self.retrained_networks = None
+        self.labels = labels
         self.selective_network = SelectiveRetrainingNetwork(hidden_layer_sizes=hidden_layer_sizes,
                                                             learning_rate_init=learning_rate_init,
                                                             random_state=random_state,
@@ -190,11 +191,12 @@ class SelectiveRetrainingCommittee:
                         results = [x * (inverted_weights[index[0][f]]/summed_weights) for x in results]
                     summed_results = [x + y for x, y in zip(summed_results, results[0])]
                 # determine weighted majority vote result
-                prediction = [0] * self.selective_network.n_outputs_
-                prediction[summed_results.index(max(summed_results))] = 1
+                prediction = self.labels[summed_results.index(max(summed_results))]
                 y_predicted.append(prediction)
         if data_frame:
             y_predicted = pd.DataFrame(y_predicted)
+        else:
+            y_predicted = np.asarray(y_predicted)
         return y_predicted
 
     def predict_without_retraining(self, points):
