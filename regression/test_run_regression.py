@@ -12,7 +12,7 @@ algorithms_to_execute = {"LRP":     True,
                          "Learn++": False,
                          "DropIn":  True,
                          "SelectiveRetraining": False}
-data_set = "PAMAP2"
+data_set = "gas_sensor_array_drift"
 data_set_params = {"n_samples":     50000,
                    "n_features":    15,
                    "n_informative": 9,
@@ -81,11 +81,11 @@ learn_p_features_standard = None
 learn_p_weak_classifier_threshold = 0.3
 
 # DropIn
-dropin_hidden_layer_sizes = [95, 95, 95]
+dropin_hidden_layer_sizes = [80, 80, 80]
 dropin_learning_rate_init = 0.1
-dropin_random_state = 9
-dropin_np_seed = 9
-p_dropin_standard = 1
+dropin_random_state = 7
+dropin_np_seed = 12
+p_dropin_standard = 0
 
 # Selective Retraining
 sr_hidden_layer_sizes = [80, 80, 80]
@@ -178,7 +178,7 @@ if algorithms_to_execute["DropIn"]:
                                            learning_rate_init=dropin_learning_rate_init,
                                            p_dropin=avg_lrp_scores_scaled_inverted,
                                            random_state=dropin_random_state,
-                                           activation='relu')
+                                           activation=activation)
         dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed)
 
         # LRP - Range
@@ -187,7 +187,7 @@ if algorithms_to_execute["DropIn"]:
                                              learning_rate_init=dropin_learning_rate_init,
                                              p_dropin=avg_lrp_scores_range_inverted,
                                              random_state=dropin_random_state,
-                                             activation='relu')
+                                             activation=activation)
         dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed)
 
     # Validation

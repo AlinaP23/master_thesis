@@ -4,12 +4,11 @@ Learn++: https://www.researchgate.net/profile/Robi_Polikar/publication/4030043_A
 """
 import numpy as np
 import pandas as pd
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 from sklearn import model_selection
-from sklearn.metrics import accuracy_score
 
 
-class LearnPlusMLPClassifier(MLPClassifier):
+class LearnPlusMLPRegressor(MLPRegressor):
     def __init__(self, feature_selection, hidden_layer_sizes, learning_rate_init, activation):
         self.feature_selection = feature_selection
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
@@ -17,21 +16,20 @@ class LearnPlusMLPClassifier(MLPClassifier):
                          activation=activation)
 
 
-class LearnCommittee:
+class LearnCommitteeRegression:
     def __init__(self,
-                 no_of_weak_classifiers,
+                 no_of_weak_regressors,
                  percentage_of_features,
                  no_of_features,
                  no_of_out_nodes,
                  hidden_layer_sizes,
                  learning_rate_init,
-                 labels,
                  p_features,
                  missing_data_representation,
                  activation,
                  threshold):
 
-        # to be forwarded to weak classifiers
+        # to be forwarded to weak regressors
         self.no_of_out_nodes = no_of_out_nodes
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate_init = learning_rate_init
@@ -40,13 +38,12 @@ class LearnCommittee:
 
         # used for LearnCommittee
         self.no_of_features = no_of_features
-        self.no_of_weak_classifiers = no_of_weak_classifiers
+        self.no_of_weak_regressors = no_of_weak_regressors
         self.missing_data_representation = missing_data_representation
         self.percentage_of_features = percentage_of_features
-        self.labels = labels
-        self.universal_classifier_set = [None]*no_of_weak_classifiers
+        self.universal_regressor_set = [None]*no_of_weak_regressors
 
-        # initialize prob. of features to be chosen for weak classifier
+        # initialize prob. of features to be chosen for weak regressors
         if p_features is not None:
             self.p_features = p_features
         else:
@@ -54,29 +51,27 @@ class LearnCommittee:
             for k in range(0, self.no_of_features):
                 self.p_features[k] = 1 / self.no_of_features
 
-    def fit(self, features, labels, np_seed, split_seed):
+    def fit(self, features, np_seed, split_seed):
         """Triggers the training of the Learn++-Committee.
 
         Parameters
         ----------
         features: array of shape [n_samples, n_features]
             Samples to be used for training of the committee
-        labels: array of shape [n_samples]
-            Labels for class membership of each sample
         np_seed: integer
             Seed to make numpy randomization reproducible.
         split_seed: integer
             Seed to make random split reproducible.
         """
         x_weak_train, x_weak_test, y_weak_train, y_weak_test = \
-            model_selection.train_test_split(features, labels, test_size=0.1, random_state=split_seed, stratify=labels)
+            model_selection.train_test_split(features, test_size=0.1, random_state=split_seed)
         no_selected_features = int(self.no_of_features * self.percentage_of_features)
         feature_range = range(0, self.no_of_features)
         np.random.seed(np_seed)
 
-        # Training of set of weak classifiers
+        # Training of set of weak regressors
         k = 0
-        while k < self.no_of_weak_classifiers:
+        while k < self.no_of_weak_regressors:
             # normalize probability of feature selection
             p_sum = sum(self.p_features)
             if p_sum != 1:
@@ -87,62 +82,63 @@ class LearnCommittee:
                 .tolist()
             feature_selection.sort()
 
-            # instantiate weak classifier
-            weak_classifier = LearnPlusMLPClassifier(feature_selection=feature_selection,
-                                                     hidden_layer_sizes=self.hidden_layer_sizes,
-                                                     learning_rate_init=self.learning_rate_init,
-                                                     activation=self.activation)
+            # instantiate weak regressor
+            weak_regressor = LearnPlusMLPRegressor(feature_selection=feature_selection,
+                                                   hidden_layer_sizes=self.hidden_layer_sizes,
+                                                   learning_rate_init=self.learning_rate_init,
+                                                   activation=self.activation)
 
-            # train classifier
+            # train regressor
             x_reduced = x_weak_train[:, feature_selection]
-            weak_classifier.fit(x_reduced, y_weak_train)
+            weak_regressor.fit(x_reduced, y_weak_train)
 
-            # calculate classifier quality
-            y_weak_predicted = weak_classifier.predict(x_weak_test[:, feature_selection])
-            accuracy = accuracy_score(y_weak_test, y_weak_predicted)
+            # calculate regressor quality
+            y_weak_predicted = weak_regressor.predict(x_weak_test[:, feature_selection])
+            # TODO: replace accuracy with regression performance measure
+            r_2 = weak_regressor.score(y_weak_test, y_weak_predicted)
 
             # if quality above threshold: save, else discard
-            if accuracy > self.threshold:
-                self.universal_classifier_set[k] = weak_classifier
+            if r_2 > self.threshold:
+                self.universal_regressor_set[k] = weak_regressor
                 k += 1
-                print(k, " weak classifiers trained")
+                print(k, " weak regressors trained")
                 for i in feature_selection:
                     self.p_features[i] = self.p_features[i] * 1 / self.no_of_features
 
     def predict(self, points, data_frame=False):
-        """Classify the given input using the Learn++-Committee.
+        """Predict target variable for the given input using the Learn++-Committee.
 
         Parameters
         ----------
         points: array of shape [n_samples, n_features]
             Samples to be classified
         data_frame: boolean
-            Indicates whether the label array to be returned should be transformed to a data frame
+            Indicates whether the predicted value array to be returned should be transformed to a data frame
 
         Returns
         ----------
         y_predicted: array of shape [n_samples]
-            Predicted labels for the given points
+            Predicted values for the given points
         """
         y_predicted = [None] * len(points)
         for p in range(0, len(points)):
-            y_predicted[p] = self.labels[self.run(points[p])]
+            y_predicted[p] = self.run(points[p])
         if data_frame:
             y_predicted = pd.DataFrame(list(y_predicted))
         return y_predicted
 
     def run(self, point):
-        """Classify the a single sample via majority vote of the committee's weak classifiers.
+        """Predict the target value of a single sample by averaging over the committee's weak regressors' results.
 
          Parameters
          ----------
          point: array of shape [n_features]
-            Sample to be classified
+            Sample for which target value shall be predicted
 
          Returns
          ----------
          y_predicted: integer
-            Index of the predicted label for the given point
+            Committee's final prediction (average of the individual regressors' results)
          """
         # determine available features
         available_features = []
@@ -151,21 +147,21 @@ class LearnCommittee:
                 available_features.append(i)
         available_features.sort()
 
-        # determine set of usable classifiers
-        usable_classifier_set = []
-        for c in self.universal_classifier_set:
+        # determine set of usable regressors
+        usable_regressor_set = []
+        for c in self.universal_regressor_set:
             if all(feature in available_features for feature in c.feature_selection):
-                usable_classifier_set.append(c)
+                usable_regressor_set.append(c)
 
-        # classify point with all usable classifiers
+        # classify point with all usable regressors
         summed_up_results = [0] * self.no_of_out_nodes
-        for c in usable_classifier_set:
+        for c in usable_regressor_set:
             reduced_point = point[c.feature_selection].reshape(1, -1)
-            classification_result = c.predict_proba(reduced_point)
-            summed_up_results = [x + y for x, y in zip(summed_up_results, classification_result[0])]
+            regression_result = c.predict(reduced_point)
+            summed_up_results = [x + y for x, y in zip(summed_up_results, regression_result[0])]
 
-        # determine weighted majority vote result
-        maj_vote_result = summed_up_results.index(max(summed_up_results))
+        # determine committee result by averaging the individual results
+        avg_result = summed_up_results[0] / len(usable_regressor_set)
 
-        return maj_vote_result
+        return avg_result
 

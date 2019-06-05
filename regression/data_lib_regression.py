@@ -73,8 +73,6 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         Indicates whether the labels of the data set are represented in binary format
     """
     data_frame = False
-    activation = 'logistic'
-
     if data_set == "iris":
         iris = pd.read_csv('./data/iris.csv')
 
@@ -145,32 +143,20 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
     elif data_set == "PAMAP2":
         # https://archive.ics.uci.edu/ml/datasets/PAMAP2+Physical+Activity+Monitoring
-        sensor_data = pd.read_csv('./data/PAMAP2_Dataset/Protocol/subject101.dat', delimiter=" ", header=None)
-        # sensor_data = sensor_data.append(pd.read_csv('./data/PAMAP2_Dataset/Protocol/subject102.dat', delimiter=" ", header=None))
+        sensor_data = pd.read_csv('./data/PAMAP2_Dataset_Protocol/subject101.dat', delimiter=" ", header=None)
+        sensor_data = sensor_data.append(pd.read_csv('./data/PAMAP2_Dataset/Protocol/subject102.dat'))
 
-        # https://github.com/scikit-learn/scikit-learn/issues/8755
-        X = sensor_data.iloc[0:1000, pd.np.r_[3:15, 20:32, 37:49]].values
+        sensor_data = shuffle(sensor_data, random_state=random_state)
 
-        # Y = np.where(sensor_data.iloc[:, 1].values != 0)
-        Y = sensor_data.iloc[0:1000, 1].values
+        X = sensor_data.iloc[:, 2:15].values
+        X = X.add(sensor_data.iloc[:, 20:32].values)
+        X = X.add(sensor_data.ilos[:, 37:49].values)
 
+        Y = np.where(sensor_data.iloc[:, 1].values != 0)
         # Group to physical activity intensity -> 1: light, 2: moderate, 3: vigorous
-        Y[((Y == 1) | (Y == 2) | (Y == 3) | (Y == 17))] = 1
-        Y[((Y == 4) | (Y == 6) | (Y == 7) | (Y == 13) | (Y == 16))] = 2
-        Y[((Y == 5) | (Y == 12) | (Y == 20) | (Y == 24))] = 3
-
-        # Create sliding window representation
-        window_size = 512
-        X_sw = np.ndarray(shape=(len(X) - window_size, len(X[0]) * window_size))
-        for i in range(0, len(X) - window_size):
-            X_sw[i] = X[i:i+window_size].flatten()
-            Y[i] = int(Y[i + int(window_size/2)])
-
-        X = X_sw
-        Y = Y[0:(len(Y) - window_size)]
-
-        activation = "logistic"
-        labels = [0, 1, 2, 3]
+        Y[:, 0] = np.where(Y[:, 0] == 1 or Y[:, 0] == 2 or Y[:, 0] == 3 or Y[:, 0] == 17 or Y, 1,
+                           np.where(Y[:, 0] == 4 or Y[:, 0] == 6 or Y[:, 0] == 7 or Y[:, 0] == 13 or Y[:, 0] == 16, 2,
+                           np.where(Y[:, 0] == 5 or Y[:, 0] == 12 or Y[:, 0] == 20 or Y[:, 0] == 24, 3)))
 
     elif data_set == "gas_sensor_array_drift":
         # https://archive.ics.uci.edu/ml/datasets/Gas+Sensor+Array+Drift+Dataset+at+Different+Concentrations
