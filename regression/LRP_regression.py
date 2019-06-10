@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
-from sklearn.neural_network import MLPClassifier
+from sklearn.neural_network import MLPRegressor
 from sklearn.utils import check_array
 from sklearn import model_selection
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import r2_score
 
 
-class CustomMLPClassifier(MLPClassifier):
+class CustomMLPRegressor(MLPRegressor):
 
     def predict_lrp(self, data):
         """ https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/neural_network/multilayer_perceptron.py
@@ -47,7 +47,7 @@ class CustomMLPClassifier(MLPClassifier):
         return y_predicted, activations
 
 
-class LRPNetwork:
+class LRPNetworkRegression:
     def __init__(self,
                  hidden_layer_sizes,
                  learning_rate_init,
@@ -59,15 +59,15 @@ class LRPNetwork:
         self.activation = activation
         self.LRP_scores_regarded = 0
 
-    def avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_states, alpha, accuracy_threshold):
+    def avg_lrp_score_per_feature(self, features, target_values, test_size, seed, random_states, alpha, threshold):
         """ Calculates the average LRP score per feature based on the calculations of several individual networks.
 
         Parameters
         ----------
         features: array of shape [n_samples, n_features]
             Samples to be used for the calculation of the LRP scores
-        labels: array of shape [n_samples]
-            Labels for class membership of each sample
+        target_values: array of shape [n_samples]
+            Target values for class membership of each sample
         test_size: float
             Percentage of the samples to be used for testing purposes
         seed: integer
@@ -77,27 +77,27 @@ class LRPNetwork:
         alpha: integer
             Determines the weighting of positive and negative influences on a node during LRP score calculation.
             (alpha = weighting of positive values; beta = weighting of negative values (alpha - 1))
-        accuracy_threshold: float
-            Determines accuracy threshold a neural network has to achieve to be used during LRP score calculation
+        threshold: float
+            Determines performance threshold a neural network has to achieve to be used during LRP score calculation
 
         Returns
         ----------
         avg_feature_lrp_scores: array of shape [n_features]
             Lists the average LRP scores per feature
-        highest_performing_network: instance of CustomMLPClassifier
-            The network which scored the highest accuracy
+        highest_performing_network: instance of CustomMLPRegressor
+            The network which scored the highest performance measure
         """
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
         iterations = len(random_states)
         single_networks = [None] * iterations
-        accuracies = [0] * iterations
+        performances = [0] * iterations
         network_results = 0
 
         for i in range(0, iterations):
             print("Iteration:", i + 1)
-            single_network_results, single_networks[i], accuracies[i] = \
-                self.single_network_avg_lrp_score_per_feature(features, labels, test_size, seed, random_states[i],
-                                                              alpha, accuracy_threshold)
+            single_network_results, single_networks[i], performances[i] = \
+                self.single_network_avg_lrp_score_per_feature(features, target_values, test_size, seed, random_states[i],
+                                                              alpha, threshold)
             if single_network_results is not None:
                 avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, single_network_results)]
                 network_results += 1
@@ -105,11 +105,11 @@ class LRPNetwork:
         if network_results != 0:
             avg_feature_lrp_scores[:] = [x / network_results for x in avg_feature_lrp_scores]
 
-        highest_performing_network = single_networks[accuracies.index(max(accuracies))]
+        highest_performing_network = single_networks[performances.index(max(performances))]
 
         return avg_feature_lrp_scores, highest_performing_network
 
-    def single_network_avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_state, alpha,
+    def single_network_avg_lrp_score_per_feature(self, features, target_values, test_size, seed, random_state, alpha,
                                                  threshold):
         """ Calculates the average LRP score per feature within one network.
 
@@ -117,8 +117,8 @@ class LRPNetwork:
         ----------
         features: array of shape [n_samples, n_features]
             Samples to be used for the calculation of the LRP scores
-        labels: array of shape [n_samples]
-            Labels for class membership of each sample
+        target_values: array of shape [n_samples]
+            Target values of the samples
         test_size: float
             Percentage of the samples to be used for testing purposes
         seed: integer
@@ -129,22 +129,23 @@ class LRPNetwork:
             Determines the weighting of positive and negative influences on a node during LRP score calculation.
             (alpha = weighting of positive values; beta = weighting of negative values (alpha - 1)). Must be >= 0.
         threshold: float
-            Determines accuracy threshold a neural network has to achieve to be used during LRP score calculation
+            Determines performance indicator threshold a neural network has to achieve to be used during LRP score
+            calculation
 
         Returns
         ----------
         avg_feature_lrp_scores: array of shape [n_features]
             Lists the average LRP scores per feature
-        mlp_network: instance of CustomMLPClassifier
+        mlp_network: instance of CustomMLPRegressor
             The newly trained network
-        accuracy: float
-            The newly trained network's accuracy score
+        r_2: float
+            The newly trained network's performance indicator score
         """
         # variable definition
         avg_feature_lrp_scores = [0] * self.no_of_in_nodes
 
         x_train, x_test, y_train, y_test = \
-            model_selection.train_test_split(features, labels, test_size=test_size, random_state=seed, stratify=labels)
+            model_selection.train_test_split(features, target_values, test_size=test_size, random_state=seed)
 
         if isinstance(y_test, pd.DataFrame):
             y_test = y_test.values
@@ -152,16 +153,16 @@ class LRPNetwork:
             y_test = pd.Series.tolist(y_test)
 
         # train neural network
-        mlp_network = CustomMLPClassifier(hidden_layer_sizes=self.hidden_layer_sizes,
-                                          learning_rate_init=self.learning_rate_init,
-                                          activation=self.activation,
-                                          random_state=random_state)
+        mlp_network = CustomMLPRegressor(hidden_layer_sizes=self.hidden_layer_sizes,
+                                         learning_rate_init=self.learning_rate_init,
+                                         activation=self.activation,
+                                         random_state=random_state)
         mlp_network.fit(x_train, y_train)
 
         predictions = mlp_network.predict(x_test)
-        accuracy = accuracy_score(y_test, predictions)
+        r_2 = r2_score(y_test, predictions)
 
-        if accuracy > threshold:
+        if r_2 > threshold:
             # calculate avg. LRP scores for features - use correctly classified test data to determine LRP scores
             lrp_iterations = 0
 
@@ -176,17 +177,17 @@ class LRPNetwork:
             if lrp_iterations != 0:
                 avg_feature_lrp_scores[:] = [x / lrp_iterations for x in avg_feature_lrp_scores]
 
-            return avg_feature_lrp_scores, mlp_network, accuracy
+            return avg_feature_lrp_scores, mlp_network, r_2
         else:
-            return None, mlp_network, accuracy
+            return None, mlp_network, r_2
 
     def lrp_scores(self, network, data, alpha, beta):
         """ Calculates the relevance matrix/LRP score for all nodes during the classification of one sample.
 
         Parameters
         ----------
-        network: instance of CustomMLPClassifier
-            The classifier to be used to calculate the LRP scores
+        network: instance of CustomMLPRegressor
+            The regressor to be used to calculate the LRP scores
         data: array of shape [n_features]
             The data sample which shall be used to calculate the LRP scores
         alpha: integer

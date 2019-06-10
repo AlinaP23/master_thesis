@@ -111,7 +111,7 @@ class SelectiveRetrainingNetworkRegression(MLPRegressor):
         return loss, coef_grads, intercept_grads
 
 
-class SelectiveRetrainingCommittee:
+class SelectiveRetrainingCommitteeRegression:
     def __init__(self, learning_rate_init, hidden_layer_sizes, random_state, activation):
         self.retrained_networks = None
         self.selective_network = SelectiveRetrainingNetworkRegression(hidden_layer_sizes=hidden_layer_sizes,
@@ -149,7 +149,7 @@ class SelectiveRetrainingCommittee:
             retrained_network.selective_fit(features_incomplete, target_values, i, weight_threshold)
             self.retrained_networks.append(retrained_network)
 
-    def predict(self, points, data_frame=False, inverted_weights=None):
+    def predict(self, points, inverted_weights=None):
         """ Predict target value for the given input using the retraining committee. If no features is missing for a
         data point, use original network for regression only. If data is missing, predict the target value with specific
         retrained regressors for each of the missing features and return the average.
@@ -158,8 +158,6 @@ class SelectiveRetrainingCommittee:
         ----------
         points: array of shape [n_samples, n_features]
             Input samples for the regression
-        data_frame: boolean
-            Indicates whether the array containing the predictions should returned should be transformed to a data frame
         inverted_weights: None or array of shape [n_features]
             inverted weight of each feature, i.e. how much weight an algorithm missing the incorporation of this feature
             should have
@@ -194,11 +192,8 @@ class SelectiveRetrainingCommittee:
                 # determine committee result by averaging the individual results
                 prediction = summed_results / index[0].size
                 y_predicted.append(prediction)
-        if data_frame:
-            y_predicted = pd.DataFrame(y_predicted)
-        else:
-            y_predicted = np.asarray(y_predicted)
-        return y_predicted
+
+        return np.asarray(y_predicted)
 
     def predict_without_retraining(self, points):
         """Predict the given input's target values using the 'original' network trained on the complete data set only.

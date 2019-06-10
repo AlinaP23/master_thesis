@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPRegressor
 from sklearn import model_selection
+from sklearn.metrics import r2_score
 
 
 class LearnPlusMLPRegressor(MLPRegressor):
@@ -21,7 +22,6 @@ class LearnCommitteeRegression:
                  no_of_weak_regressors,
                  percentage_of_features,
                  no_of_features,
-                 no_of_out_nodes,
                  hidden_layer_sizes,
                  learning_rate_init,
                  p_features,
@@ -30,7 +30,6 @@ class LearnCommitteeRegression:
                  threshold):
 
         # to be forwarded to weak regressors
-        self.no_of_out_nodes = no_of_out_nodes
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate_init = learning_rate_init
         self.activation = activation
@@ -51,20 +50,22 @@ class LearnCommitteeRegression:
             for k in range(0, self.no_of_features):
                 self.p_features[k] = 1 / self.no_of_features
 
-    def fit(self, features, np_seed, split_seed):
+    def fit(self, features, target_values, np_seed, split_seed):
         """Triggers the training of the Learn++-Committee.
 
         Parameters
         ----------
         features: array of shape [n_samples, n_features]
             Samples to be used for training of the committee
+        target_values: array of shape [n_samples]
+            Target values of the samples
         np_seed: integer
             Seed to make numpy randomization reproducible.
         split_seed: integer
             Seed to make random split reproducible.
         """
         x_weak_train, x_weak_test, y_weak_train, y_weak_test = \
-            model_selection.train_test_split(features, test_size=0.1, random_state=split_seed)
+            model_selection.train_test_split(features, target_values, test_size=0.1, random_state=split_seed)
         no_selected_features = int(self.no_of_features * self.percentage_of_features)
         feature_range = range(0, self.no_of_features)
         np.random.seed(np_seed)
@@ -95,7 +96,7 @@ class LearnCommitteeRegression:
             # calculate regressor quality
             y_weak_predicted = weak_regressor.predict(x_weak_test[:, feature_selection])
             # TODO: replace accuracy with regression performance measure
-            r_2 = weak_regressor.score(y_weak_test, y_weak_predicted)
+            r_2 = r2_score(y_weak_test, y_weak_predicted)
 
             # if quality above threshold: save, else discard
             if r_2 > self.threshold:
@@ -105,15 +106,13 @@ class LearnCommitteeRegression:
                 for i in feature_selection:
                     self.p_features[i] = self.p_features[i] * 1 / self.no_of_features
 
-    def predict(self, points, data_frame=False):
+    def predict(self, points):
         """Predict target variable for the given input using the Learn++-Committee.
 
         Parameters
         ----------
         points: array of shape [n_samples, n_features]
             Samples to be classified
-        data_frame: boolean
-            Indicates whether the predicted value array to be returned should be transformed to a data frame
 
         Returns
         ----------
@@ -123,8 +122,7 @@ class LearnCommitteeRegression:
         y_predicted = [None] * len(points)
         for p in range(0, len(points)):
             y_predicted[p] = self.run(points[p])
-        if data_frame:
-            y_predicted = pd.DataFrame(list(y_predicted))
+
         return y_predicted
 
     def run(self, point):
@@ -154,7 +152,7 @@ class LearnCommitteeRegression:
                 usable_regressor_set.append(c)
 
         # classify point with all usable regressors
-        summed_up_results = [0] * self.no_of_out_nodes
+        summed_up_results = [0]
         for c in usable_regressor_set:
             reduced_point = point[c.feature_selection].reshape(1, -1)
             regression_result = c.predict(reduced_point)
