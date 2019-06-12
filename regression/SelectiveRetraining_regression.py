@@ -177,21 +177,20 @@ class SelectiveRetrainingCommitteeRegression:
             else:
                 # predict target value point with specific retrained regressors for each of the missing features
                 summed_results = [0]
-                # TODO: how to implement here?!
                 if inverted_weights is not None:
                     # calculate sum of inverted LRP weights for normalization purposes
                     summed_weights = [inverted_weights[x] for x in index[0]]
                     summed_weights = sum(summed_weights)
                 for f in range(0, index[0].size):
                     results = self.retrained_networks[index[0][f]].predict([points[p]])
-                    # TODO: how to implement here?!
                     if inverted_weights is not None:
                         # weight predictions according to inverted LRP scores
                         results = [x * (inverted_weights[index[0][f]]/summed_weights) for x in results]
+                    else:
+                        # determine committee result by averaging the individual results
+                        results = [x / index[0].size for x in results]
                     summed_results = [x + y for x, y in zip(summed_results, results[0])]
-                # determine committee result by averaging the individual results
-                prediction = summed_results / index[0].size
-                y_predicted.append(prediction)
+                y_predicted.append(summed_results)
 
         return np.asarray(y_predicted)
 
