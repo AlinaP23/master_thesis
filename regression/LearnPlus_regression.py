@@ -156,7 +156,7 @@ class LearnCommitteeRegression:
         for c in usable_regressor_set:
             reduced_point = point[c.feature_selection].reshape(1, -1)
             regression_result = c.predict(reduced_point)
-            summed_up_results = [x + y for x, y in zip(summed_up_results, regression_result[0])]
+            summed_up_results = [x + y for x, y in zip(summed_up_results, regression_result)]
 
         # determine committee result by averaging the individual results
         avg_result = summed_up_results[0] / len(usable_regressor_set)

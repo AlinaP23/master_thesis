@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from sklearn.neural_network import MLPRegressor
 from copy import deepcopy
 
@@ -177,6 +176,7 @@ class SelectiveRetrainingCommitteeRegression:
             else:
                 # predict target value point with specific retrained regressors for each of the missing features
                 summed_results = [0]
+                summed_weights = 0
                 if inverted_weights is not None:
                     # calculate sum of inverted LRP weights for normalization purposes
                     summed_weights = [inverted_weights[x] for x in index[0]]

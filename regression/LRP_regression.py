@@ -162,6 +162,9 @@ class LRPNetworkRegression:
         predictions = mlp_network.predict(x_test)
         r_2 = r2_score(y_test, predictions)
 
+        ''' TODO: Adjust logic here -> need to check for deviation (e.g. MSE) between predicted and actual target value
+            if below certain threshold -> calculate LRP Score; or certain percentage of "best" classified data?
+         '''
         if r_2 > threshold:
             # calculate avg. LRP scores for features - use correctly classified test data to determine LRP scores
             lrp_iterations = 0

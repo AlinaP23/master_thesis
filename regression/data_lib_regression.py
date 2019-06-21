@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from sklearn.utils import shuffle
 from sklearn.datasets import make_regression
 
 
@@ -50,26 +49,25 @@ def get_data_set(data_set, n_samples=100, n_features=100, n_informative=10, n_ta
     coef: array of shape [n_features] or [n_features, n_targets], optional
         The coefficient of the underlying linear model. It is returned only if coef is True.
     activation: String
-        Activation function to be used in a neural network when classifying the data set
+        Activation function to be used in a neural network when predicting the target values.
     """
     if data_set == "iris":
         data = 'iris'
     elif data_set == "income":
         data = 'income'
     elif data_set == "sklearn":
-        X, Y, coef = make_regression(n_samples=n_samples,
-                                     n_features=n_features,
-                                     n_informative=n_informative,
-                                     n_targets=n_targets,
-                                     bias=bias,
-                                     effective_rank=effective_rank,
-                                     tail_strength=tail_strength,
-                                     noise=noise,
-                                     shuffle=data_shuffle,
-                                     coef=coef,
-                                     random_state=random_state)
-        Y = pd.get_dummies(Y)
-        activation = 'relu'
+        X, Y = make_regression(n_samples=n_samples,
+                               n_features=n_features,
+                               n_informative=n_informative,
+                               n_targets=n_targets,
+                               bias=bias,
+                               effective_rank=effective_rank,
+                               tail_strength=tail_strength,
+                               noise=noise,
+                               shuffle=data_shuffle,
+                               coef=coef,
+                               random_state=random_state)
+        activation = 'logistic'
 
     return X, Y, activation
 

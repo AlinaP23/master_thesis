@@ -6,14 +6,15 @@ from regression.SelectiveRetraining_regression import SelectiveRetrainingCommitt
     as SelectiveRetrainingCommittee
 from sklearn import model_selection
 from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     True,
-                         "Learn++": False,
+algorithms_to_execute = {"LRP":     False,
+                         "Learn++": True,
                          "DropIn":  True,
-                         "SelectiveRetraining": False}
-data_set = "gas_sensor_array_drift"
+                         "SelectiveRetraining": True}
+data_set = "sklearn"
 data_set_params = {"n_samples":      50000,
                    "n_features":     15,
                    "n_informative":  9,
@@ -41,20 +42,20 @@ X, Y, activation = data_lib.get_data_set(data_set,
                                          effective_rank=data_set_params["effective_rank"],
                                          tail_strength=data_set_params["tail_strength"],
                                          noise=data_set_params["noise"],
-                                         coef=data_set_params["coef"],
                                          data_shuffle=data_set_params["data_shuffle"],
+                                         coef=data_set_params["coef"],
                                          random_state=data_set_params["random_state"])
 x_train, x_test, y_train, y_test = \
-    model_selection.train_test_split(X, Y, test_size=ms_test_size, random_state=ms_random_state, stratify=Y)
+    model_selection.train_test_split(X, Y, test_size=ms_test_size, random_state=ms_random_state)
 x_test_failure = data_lib.get_sensor_failure_test_set(x_test,
                                                       np_seed=failure_simulation_np_seed,
                                                       random=random_failure,
                                                       multi_sensor_failure=multi_sensor_failure,
                                                       failure_percentage=failure_percentage)
 # LRP
-LRP_hidden_layer_sizes = [80, 80, 80]
+LRP_hidden_layer_sizes = [20, 20, 20]
 LRP_learning_rate_init = 0.1
-LRP_random_states = [9]
+LRP_random_states = [7]
 LRP_seed = 9
 LRP_test_size = 0.1
 LRP_alpha = 2
@@ -63,11 +64,11 @@ LRP_dropout_threshold_max = 0.4
 LRP_dropout_threshold_min = 0.1
 
 # Learn++
-learn_hidden_layer_sizes = [20, 20, 20]
+learn_hidden_layer_sizes = [5, 5, 5]
 learn_learning_rate_init = 0.1
 learn_random_state = 9
 learn_np_seed = 9
-learn_no_of_weak_regressors = 30
+learn_no_of_weak_regressors = 5
 learn_percentage_of_features = 0.75
 learn_missing_data_representation = None
 learn_p_features_standard = None
@@ -91,10 +92,11 @@ if algorithms_to_execute["LRP"]:
     print("Training LRP Network...")
     lrp_nn = LRPNetwork(hidden_layer_sizes=LRP_hidden_layer_sizes,
                         learning_rate_init=LRP_learning_rate_init,
+                        no_of_in_nodes=len(X[0]),
                         activation=activation)
     print("Calculating LRP Scores...")
     avg_lrp_scores, mlp_network = lrp_nn.avg_lrp_score_per_feature(features=X,
-                                                                   labels=Y,
+                                                                   target_values=Y,
                                                                    test_size=LRP_test_size,
                                                                    seed=LRP_seed,
                                                                    random_states=LRP_random_states,
@@ -231,6 +233,9 @@ if algorithms_to_execute["LRP"]:
     print("R2 Score - LRP Network: ")
     print("           w/o Sensor Failure: ", r2_score(lrp_predictions, y_test))
     print("           w/  Sensor Failure: ", r2_score(lrp_predictions_failure, y_test))
+    print("MSE Score - LRP Network: ")
+    print("           w/o Sensor Failure: ", mean_squared_error(lrp_predictions, y_test))
+    print("           w/  Sensor Failure: ", mean_squared_error(lrp_predictions_failure, y_test))
 
 if algorithms_to_execute["Learn++"]:
     print("R2 Score - Learn++:")
@@ -239,6 +244,13 @@ if algorithms_to_execute["Learn++"]:
     if algorithms_to_execute["LRP"]:
         print("w/ LRP   & w/o Sensor Failure: ", r2_score(learn_predictions_lrp, y_test))
         print("w/ LRP   & w/  Sensor Failure: ", r2_score(learn_predictions_failure_lrp, y_test))
+
+    print("MSE Score - Learn++:")
+    print("w/o LRP  & w/o Sensor Failure: ", mean_squared_error(learn_predictions, y_test))
+    print("w/o LRP  & w/  Sensor Failure: ", mean_squared_error(learn_predictions_failure, y_test))
+    if algorithms_to_execute["LRP"]:
+        print("w/ LRP   & w/o Sensor Failure: ", mean_squared_error(learn_predictions_lrp, y_test))
+        print("w/ LRP   & w/  Sensor Failure: ", mean_squared_error(learn_predictions_failure_lrp, y_test))
 
 if algorithms_to_execute["DropIn"]:
     print("R2 Score - DropIn:")
@@ -249,6 +261,15 @@ if algorithms_to_execute["DropIn"]:
         print("w/  LRP  & w/  Sensor Failure: ", r2_score(dropin_predictions_failure_lrp, y_test))
         print("w/  LRPr & w/o Sensor Failure: ", r2_score(dropin_predictions_lrp_r, y_test))
         print("w/  LRPr & w/  Sensor Failure: ", r2_score(dropin_predictions_failure_lrp_r, y_test))
+
+    print("MSE Score - DropIn:")
+    print("w/o LRP  & w/o Sensor Failure: ", mean_squared_error(dropin_predictions, y_test))
+    print("w/o LRP  & w/  Sensor Failure: ", mean_squared_error(dropin_predictions_failure, y_test))
+    if algorithms_to_execute["LRP"]:
+        print("w/  LRP  & w/o Sensor Failure: ", mean_squared_error(dropin_predictions_lrp, y_test))
+        print("w/  LRP  & w/  Sensor Failure: ", mean_squared_error(dropin_predictions_failure_lrp, y_test))
+        print("w/  LRPr & w/o Sensor Failure: ", mean_squared_error(dropin_predictions_lrp_r, y_test))
+        print("w/  LRPr & w/  Sensor Failure: ", mean_squared_error(dropin_predictions_failure_lrp_r, y_test))
 
 if algorithms_to_execute["SelectiveRetraining"]:
     print("R2 Score - Selective Retraining:")
@@ -261,3 +282,14 @@ if algorithms_to_execute["SelectiveRetraining"]:
     if algorithms_to_execute["LRP"]:
         print("w/  LRP  & w/o Sensor Failure: ", r2_score(sr_predictions_lrp, y_test))
         print("w/  LRP  & w/  Sensor Failure: ", r2_score(sr_predictions_failure_lrp, y_test))
+
+    print("MSE Score - Selective Retraining:")
+    print("MSE Score - Without Retraining: ")
+    print("           w/o Sensor Failure: ", mean_squared_error(sr_original_predictions, y_test))
+    print("           w/  Sensor Failure: ", mean_squared_error(sr_original_predictions_failure, y_test))
+    print("MSE Score - Selective Retraining: ")
+    print("w/o LRP  & w/o Sensor Failure: ", mean_squared_error(sr_predictions, y_test))
+    print("w/o LRP  & w/  Sensor Failure: ", mean_squared_error(sr_predictions_failure, y_test))
+    if algorithms_to_execute["LRP"]:
+        print("w/  LRP  & w/o Sensor Failure: ", mean_squared_error(sr_predictions_lrp, y_test))
+        print("w/  LRP  & w/  Sensor Failure: ", mean_squared_error(sr_predictions_failure_lrp, y_test))
