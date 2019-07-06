@@ -1,9 +1,11 @@
 import numpy as np
 import pandas as pd
+import cmath
 from sklearn.neural_network import MLPRegressor
 from sklearn.utils import check_array
 from sklearn import model_selection
 from sklearn.metrics import r2_score
+from sklearn.metrics import mean_squared_error
 
 
 class CustomMLPRegressor(MLPRegressor):
@@ -67,7 +69,7 @@ class LRPNetworkRegression:
         features: array of shape [n_samples, n_features]
             Samples to be used for the calculation of the LRP scores
         target_values: array of shape [n_samples]
-            Target values for class membership of each sample
+            Target values of the samples
         test_size: float
             Percentage of the samples to be used for testing purposes
         seed: integer
@@ -161,18 +163,19 @@ class LRPNetworkRegression:
 
         predictions = mlp_network.predict(x_test)
         r_2 = r2_score(y_test, predictions)
+        mse = mean_squared_error(y_test, predictions)
 
-        ''' TODO: Adjust logic here -> need to check for deviation (e.g. MSE) between predicted and actual target value
-            if below certain threshold -> calculate LRP Score; or certain percentage of "best" classified data?
-         '''
         if r_2 > threshold:
-            # calculate avg. LRP scores for features - use correctly classified test data to determine LRP scores
+            # calculate avg. LRP scores for features - use only test data predicted with a deviation below the MSE to
+            # determine LRP scores
             lrp_iterations = 0
 
             for j in range(0, len(y_test)):
                 print("LRP Calculation ", j, " of ", len(y_test))
                 self.LRP_scores_regarded += 1
-                if (isinstance(y_test[j], list) and y_test[j].all() == predictions[j].all()) or y_test[j] == predictions[j]:
+
+                squared_error_tuple = (y_test[j] - predictions[j])**2
+                if mse > squared_error_tuple:
                     lrp_iterations += 1
                     feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
                     avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]

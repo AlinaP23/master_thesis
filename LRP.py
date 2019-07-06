@@ -246,7 +246,7 @@ class LRPNetwork:
                             if weight_matrix[i, connection_n] < 0:
                                 neg_sum_effects_on_k += activation_matrix[layer_n - 1][0][i] \
                                                         * weight_matrix[i, connection_n]
-                        # calculate the relevance of node j
+                        # calculate the negative relevance of node j
                         if neg_effect_j_on_k != 0:
                             negative_relevance += relevance_matrix[0][connection_n] \
                                                   * (neg_effect_j_on_k / neg_sum_effects_on_k)

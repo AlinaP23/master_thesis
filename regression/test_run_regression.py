@@ -10,7 +10,7 @@ from sklearn.metrics import mean_squared_error
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     False,
+algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
                          "DropIn":  True,
                          "SelectiveRetraining": True}
