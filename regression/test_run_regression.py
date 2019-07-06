@@ -10,9 +10,9 @@ from sklearn.metrics import mean_squared_error
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     True,
-                         "Learn++": True,
-                         "DropIn":  True,
+algorithms_to_execute = {"LRP":     False,
+                         "Learn++": False,
+                         "DropIn":  False,
                          "SelectiveRetraining": True}
 data_set = "sklearn"
 data_set_params = {"n_samples":      50000,
@@ -82,7 +82,7 @@ dropin_np_seed = 12
 p_dropin_standard = 0
 
 # Selective Retraining
-sr_hidden_layer_sizes = [80, 80, 80]
+sr_hidden_layer_sizes = [30, 30, 30]
 sr_learning_rate_init = 0.1
 sr_random_state = 9
 sr_weight_threshold = 0.7
