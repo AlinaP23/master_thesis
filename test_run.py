@@ -8,7 +8,7 @@ from sklearn.metrics import accuracy_score
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     True,
+algorithms_to_execute = {"LRP":     False,
                          "Learn++": False,
                          "DropIn":  True,
                          "SelectiveRetraining": False}

@@ -5,6 +5,7 @@ DropIn: https://arxiv.org/pdf/1705.02643.pdf
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
+from sklearn.utils import shuffle
 
 
 class DropInNetworkRegression(MLPRegressor):
@@ -18,6 +19,8 @@ class DropInNetworkRegression(MLPRegressor):
         self.train_pass = False
         self.dropout_arrays = []
         self.p_dropin = p_dropin
+        self.epoch_length = 0
+        self.tuple_number = 0
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
                          learning_rate_init=learning_rate_init,
                          random_state=random_state,
@@ -35,20 +38,23 @@ class DropInNetworkRegression(MLPRegressor):
         """
         # Test if dropin needs to be implemented as method is called during training
         if self.train_pass:
-            self.dropout_arrays = [None] * len(activations[0])
+            dropout_array = [None]
             np.random.seed(self.seed)
             for j in range(len(activations[0])):
                 # DropIn implementation
+                # if (j == 0) or (j % self.epoch_length == 0):
                 if type(self.p_dropin) is list:
-                    self.dropout_arrays[j] = np.random.binomial(1, self.p_dropin)
+                    dropout_array = np.random.binomial(1, self.p_dropin)
                 else:
-                    self.dropout_arrays[j] = np.random.binomial(1, self.p_dropin, size=activations[0][j].shape)
-                activations[0][j] = activations[0][j] * self.dropout_arrays[j]
+                    dropout_array = np.random.binomial(1, self.p_dropin, size=activations[0][j].shape)
+                activations[0][j] = activations[0][j] * dropout_array
+        #    for l in range(len(activations)):
+        #        activations[l] = shuffle(activations[l], random_state=6)
         super()._forward_pass(activations)
 
         return activations
 
-    def fit_dropin(self, features_fit, labels_fit, np_seed):
+    def fit_dropin(self, features_fit, labels_fit, np_seed, max_epochs):
         """ Triggers the training of the DropInNetwork.
 
         Parameters
@@ -59,9 +65,22 @@ class DropInNetworkRegression(MLPRegressor):
             Labels for class membership of each sample
         np_seed: integer
              Seed to make numpy randomization reproducible.
+        max_epochs: integer
+            Number of maximum epochs, i.e. number of times the algorithm will be trained with the dataset.
         """
         self.train_pass = True
         self.seed = np_seed
-        super().fit(features_fit, labels_fit)
-        self.train_pass = False
+        np.random.seed(self.seed)
+        self.epoch_length = len(labels_fit)
 
+        features_epochs = np.copy(features_fit)
+        labels_epochs = np.copy(labels_fit)
+        #for i in range(1, max_epochs):
+            # create shuffled multiple epoch data set
+        #   features_epochs = np.concatenate((features_epochs, shuffle(features_fit)))
+        #    labels_epochs = np.concatenate((labels_epochs, shuffle(labels_fit)))
+
+        super().fit(features_epochs, labels_epochs)
+
+        # reset parameter
+        self.train_pass = False

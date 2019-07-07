@@ -10,10 +10,10 @@ from sklearn.metrics import mean_squared_error
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     False,
+algorithms_to_execute = {"LRP":     True,
                          "Learn++": False,
-                         "DropIn":  False,
-                         "SelectiveRetraining": True}
+                         "DropIn":  True,
+                         "SelectiveRetraining": False}
 data_set = "sklearn"
 data_set_params = {"n_samples":      50000,
                    "n_features":     15,
@@ -75,11 +75,12 @@ learn_p_features_standard = None
 learn_p_weak_regressor_threshold = 0.3
 
 # DropIn
-dropin_hidden_layer_sizes = [80, 80, 80]
+dropin_hidden_layer_sizes = [30, 30, 30]
 dropin_learning_rate_init = 0.1
-dropin_random_state = 7
+dropin_random_state = 9
 dropin_np_seed = 12
-p_dropin_standard = 0
+p_dropin_standard = 0.8
+dropin_max_epochs = 6
 
 # Selective Retraining
 sr_hidden_layer_sizes = [30, 30, 30]
@@ -159,7 +160,7 @@ if algorithms_to_execute["DropIn"]:
                                    p_dropin=p_dropin_standard,
                                    random_state=dropin_random_state,
                                    activation=activation)
-    dropin_network.fit_dropin(x_train, y_train, dropin_np_seed)
+    dropin_network.fit_dropin(x_train, y_train, dropin_np_seed, dropin_max_epochs)
 
     if algorithms_to_execute["LRP"]:
         # LRP
@@ -169,7 +170,7 @@ if algorithms_to_execute["DropIn"]:
                                            p_dropin=avg_lrp_scores_scaled_inverted,
                                            random_state=dropin_random_state,
                                            activation=activation)
-        dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed)
+        dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed, dropin_max_epochs)
 
         # LRP - Range
         print("Training LRP DropIn (range)...")
@@ -178,7 +179,7 @@ if algorithms_to_execute["DropIn"]:
                                              p_dropin=avg_lrp_scores_range_inverted,
                                              random_state=dropin_random_state,
                                              activation=activation)
-        dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed)
+        dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed, dropin_max_epochs)
 
     # Validation
     print("Validating DropIn...")
