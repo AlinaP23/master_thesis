@@ -74,7 +74,6 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
     """
     data_frame = False
     activation = 'logistic'
-
     if data_set == "iris":
         iris = pd.read_csv('./data/iris.csv')
 
@@ -190,6 +189,57 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [1, 2, 3, 4, 5, 6]
+
+    elif data_set == "Wine":
+        # https://archive.ics.uci.edu/ml/datasets/Wine
+        sensor_data = pd.read_csv('./data/Wine/wine.data', delimiter=",", header=None)
+
+        X = sensor_data.iloc[:, 1:].values
+        Y = sensor_data.iloc[:, 0].values
+
+        activation = 'logistic'
+        labels = [1, 2, 3]
+
+    elif data_set == "WBC":
+        # https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
+        sensor_data = pd.read_csv('./data/WBC/wdbc.data', delimiter=",", header=None)
+
+        X = sensor_data.iloc[:, 2:].values
+        Y = sensor_data.iloc[:, 1]. values
+
+        activation = 'relu'
+        labels = ["M", "B"]
+
+    elif data_set == "OCR":
+        # https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits
+        sensor_data = pd.read_csv('./data/OCR/optdigits.tes', delimiter=",", header=None)
+        sensor_data = sensor_data.append(pd.read_csv('./data/OCR/optdigits.tra', delimiter=" ", header=None))
+
+        X = sensor_data.iloc[:, :63].values
+        Y = sensor_data.iloc[:, 64].values
+
+        activation = 'relu'
+        labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
+    elif data_set == "ION":
+        # https://archive.ics.uci.edu/ml/datasets/ionosphere
+        sensor_data = pd.read_csv('./data/ION/ionosphere.data', delimiter=",", header=None)
+
+        X = sensor_data.iloc[:, :33].values
+        Y = sensor_data.iloc[:, 34].values
+
+        activation = 'relu'
+        labels = ["g", "b"]
+
+    elif data_set == "MFEAT":
+        # https://archive.ics.uci.edu/ml/datasets/Multiple+Features
+        sensor_data = pd.read_csv('./data/MFEAT/mfeat-fac', delimiter=" ", header=None)
+
+        X = sensor_data.values
+        Y = [200*[0], 200*[1], 200*[2], 200*[3], 200*[4], 200*[5], 200*[6], 200*[7], 200*[8], 200*[9]]
+
+        activation = 'relu'
+        labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     elif data_set == "sklearn":
         X, Y = make_classification(n_samples=n_samples,

@@ -6,6 +6,7 @@ DropIn: https://arxiv.org/pdf/1705.02643.pdf
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.extmath import safe_sparse_dot
+from sklearn.utils import shuffle
 
 
 class DropInNetwork(MLPClassifier):
@@ -91,7 +92,7 @@ class DropInNetwork(MLPClassifier):
 
         return coef_grads, intercept_grads
 
-    def fit_dropin(self, features_fit, labels_fit, np_seed):
+    def fit_dropin(self, features_fit, labels_fit, np_seed, epochs):
         """ Triggers the training of the DropInNetwork.
 
         Parameters
@@ -105,6 +106,16 @@ class DropInNetwork(MLPClassifier):
         """
         self.train_pass = True
         self.seed = np_seed
-        super().fit(features_fit, labels_fit)
+        features_epochs = np.copy(features_fit)
+        labels_epochs = np.copy(labels_fit)
+        c = list(zip(features_fit, labels_fit))
+
+        for i in range(1, epochs):
+            # create shuffled multiple epoch data set
+            shuffled_c = shuffle(c)
+            features, labels = zip(*shuffled_c)
+            features_epochs = np.concatenate((features_epochs, features))
+            labels_epochs = np.concatenate((labels_epochs, labels))
+        super().fit(features_epochs, labels_epochs)
         self.train_pass = False
 
