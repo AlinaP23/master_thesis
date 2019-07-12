@@ -76,7 +76,7 @@ learn_hidden_layer_sizes = [30, 30, 30]
 learn_learning_rate_init = 0.1
 learn_random_state = 9
 learn_np_seed = 5
-learn_no_of_weak_classifiers = 20
+learn_no_of_weak_classifiers = [10, 20]
 learn_percentage_of_features = [0.3, 0.4, 0.6, 0.8]
 learn_missing_data_representation = None
 learn_p_features_standard = None
@@ -87,7 +87,7 @@ dropin_hidden_layer_sizes = [60, 60, 60]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 9
 dropin_np_seed = 9
-p_dropin_standard = [0.8]
+p_dropin_standard = [0.3, 0.5, 0.8]
 dropin_epochs = 3
 
 # Selective Retraining
@@ -132,49 +132,59 @@ if algorithms_to_execute["Learn++"]:
     learn_predictions_lrp = []
     learn_predictions_failure_set = []
     learn_predictions_failure_lrp_set = []
-    for pof in learn_percentage_of_features:
-        learn_committee = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
-                                         percentage_of_features=pof,
-                                         no_of_features=len(X[0]),
-                                         no_of_out_nodes=len(labels),
-                                         hidden_layer_sizes=learn_hidden_layer_sizes,
-                                         learning_rate_init=learn_learning_rate_init,
-                                         labels=labels,
-                                         missing_data_representation=learn_missing_data_representation,
-                                         p_features=learn_p_features_standard,
-                                         activation=activation,
-                                         threshold=learn_p_weak_classifier_threshold)
-        learn_committee.fit(x_train, y_train, learn_np_seed, learn_random_state)
+    for w in learn_no_of_weak_classifiers:
+        wlearn_predictions = []
+        wlearn_predictions_lrp = []
+        wlearn_predictions_failure_set = []
+        wlearn_predictions_failure_lrp_set = []
+        for pof in learn_percentage_of_features:
+            learn_committee = LearnCommittee(no_of_weak_classifiers=w,
+                                             percentage_of_features=pof,
+                                             no_of_features=len(X[0]),
+                                             no_of_out_nodes=len(labels),
+                                             hidden_layer_sizes=learn_hidden_layer_sizes,
+                                             learning_rate_init=learn_learning_rate_init,
+                                             labels=labels,
+                                             missing_data_representation=learn_missing_data_representation,
+                                             p_features=learn_p_features_standard,
+                                             activation=activation,
+                                             threshold=learn_p_weak_classifier_threshold)
+            learn_committee.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
-        if algorithms_to_execute["LRP"]:
-            # LRP
-            print("Training LRP Learn++ Committee...")
-            learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=learn_no_of_weak_classifiers,
-                                                 percentage_of_features=pof,
-                                                 no_of_features=len(X[0]),
-                                                 no_of_out_nodes=len(labels),
-                                                 hidden_layer_sizes=learn_hidden_layer_sizes,
-                                                 learning_rate_init=learn_learning_rate_init,
-                                                 labels=labels,
-                                                 missing_data_representation=learn_missing_data_representation,
-                                                 p_features=avg_lrp_scores_normalized,
-                                                 activation=activation,
-                                                 threshold=learn_p_weak_classifier_threshold)
-            learn_committee_lrp.fit(x_train, y_train, learn_np_seed, learn_random_state)
+            if algorithms_to_execute["LRP"]:
+                # LRP
+                print("Training LRP Learn++ Committee...")
+                learn_committee_lrp = LearnCommittee(no_of_weak_classifiers=w,
+                                                     percentage_of_features=pof,
+                                                     no_of_features=len(X[0]),
+                                                     no_of_out_nodes=len(labels),
+                                                     hidden_layer_sizes=learn_hidden_layer_sizes,
+                                                     learning_rate_init=learn_learning_rate_init,
+                                                     labels=labels,
+                                                     missing_data_representation=learn_missing_data_representation,
+                                                     p_features=avg_lrp_scores_normalized,
+                                                     activation=activation,
+                                                     threshold=learn_p_weak_classifier_threshold)
+                learn_committee_lrp.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
-        # Validation
-        print("Validating Learn++...")
-        learn_predictions.append(learn_committee.predict(x_test, label_df))
-        learn_predictions_failure = []
-        for learn_failure_test in x_test_failures:
-            learn_predictions_failure.append(learn_committee.predict(learn_failure_test, label_df))
-        learn_predictions_failure_set.append(learn_predictions_failure)
-        if algorithms_to_execute["LRP"]:
-            learn_predictions_lrp.append(learn_committee_lrp.predict(x_test, label_df))
-            learn_predictions_failure_lrp = []
-            for learn_failure_test_lrp in x_test_failures:
-                learn_predictions_failure_lrp.append(learn_committee_lrp.predict(learn_failure_test_lrp, label_df))
-            learn_predictions_failure_lrp_set.append(learn_predictions_failure_lrp)
+            # Validation
+            print("Validating Learn++...")
+            wlearn_predictions.append(learn_committee.predict(x_test, label_df))
+            wlearn_predictions_failure = []
+            for learn_failure_test in x_test_failures:
+                wlearn_predictions_failure.append(learn_committee.predict(learn_failure_test, label_df))
+            wlearn_predictions_failure_set.append(wlearn_predictions_failure)
+            if algorithms_to_execute["LRP"]:
+                wlearn_predictions_lrp.append(learn_committee_lrp.predict(x_test, label_df))
+                wlearn_predictions_failure_lrp = []
+                for learn_failure_test_lrp in x_test_failures:
+                    wlearn_predictions_failure_lrp.append(learn_committee_lrp.predict(learn_failure_test_lrp, label_df))
+                wlearn_predictions_failure_lrp_set.append(wlearn_predictions_failure_lrp)
+
+        learn_predictions.append(wlearn_predictions)
+        learn_predictions_lrp.append(wlearn_predictions_lrp)
+        learn_predictions_failure_set.append(wlearn_predictions_failure_set)
+        learn_predictions_failure_lrp_set.append(wlearn_predictions_failure_lrp_set)
 
 # --- DropIn --- #
 if algorithms_to_execute["DropIn"]:
@@ -291,15 +301,17 @@ if algorithms_to_execute["LRP"]:
 
 if algorithms_to_execute["Learn++"]:
     print("Accuracy Score - Learn++:")
-    for pof in range(learn_percentage_of_features.__len__()):
-        print("Percentage of features: ", learn_percentage_of_features[pof])
-        print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(learn_predictions[pof], y_test))
-        for i in range(learn_predictions_failure_set[pof].__len__()):
-            print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(learn_predictions_failure_set[pof][i], y_test))
-        if algorithms_to_execute["LRP"]:
-            print("w/ LRP   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp[pof], y_test))
-            for i in range(learn_predictions_failure_lrp_set[pof].__len__()):
-                print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ", accuracy_score(learn_predictions_failure_lrp[pof][i], y_test))
+    for w in range(learn_no_of_weak_classifiers.__len__()):
+        print("Number of weak classifiers: ", learn_no_of_weak_classifiers[w])
+        for pof in range(learn_percentage_of_features[w].__len__()):
+            print("Percentage of features: ", learn_percentage_of_features[pof])
+            print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(learn_predictions[w][pof], y_test))
+            for i in range(learn_predictions_failure_set[w][pof].__len__()):
+                print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(learn_predictions_failure_set[w][pof][i], y_test))
+            if algorithms_to_execute["LRP"]:
+                print("w/ LRP   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp[w][pof], y_test))
+                for i in range(learn_predictions_failure_lrp_set[w][pof].__len__()):
+                    print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ", accuracy_score(learn_predictions_failure_lrp_set[w][pof][i], y_test))
 
 if algorithms_to_execute["DropIn"]:
     print("Accuracy Score - DropIn:")
@@ -309,7 +321,7 @@ if algorithms_to_execute["DropIn"]:
         for i in range(dropin_predictions_failure_set[k].__len__()):
             print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(dropin_predictions_failure_set[k][i], y_test))
     if algorithms_to_execute["LRP"]:
-        print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp[k], y_test))
+        print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp, y_test))
         for i in range(dropin_predictions_failure_lrp.__len__()):
             print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(dropin_predictions_failure_lrp[i], y_test))
         print("w/  LRPr & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp_r, y_test))
@@ -321,13 +333,13 @@ if algorithms_to_execute["SelectiveRetraining"]:
         print("Accuracy Score - Selective Retraining (Weight Threshold: ", sr_weight_threshold[j],"):")
         print("Accuracy Score - Without Retraining: ")
         print("           w/o Sensor Failure: ", accuracy_score(sr_original_predictions[j], y_test))
-        for i in range(sr_original_predictions_failure[j].__len__()):
-            print("           w/  Sensor Failure", failure_percentages[i],": ", accuracy_score(sr_original_predictions_failure[j][i], y_test))
+        for i in range(sr_original_predictions_failure_set[j].__len__()):
+            print("           w/  Sensor Failure", failure_percentages[i],": ", accuracy_score(sr_original_predictions_failure_set[j][i], y_test))
         print("Accuracy Score - Selective Retraining: ")
         print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions[j], y_test))
         for i in range(sr_predictions_failure[j].__len__()):
             print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], ": ", accuracy_score(sr_predictions_failure[j][i], y_test))
         if algorithms_to_execute["LRP"]:
             print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions_lrp[j], y_test))
-            for i in range(sr_predictions_failure_lrp[j].__len__()):
-                print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(sr_predictions_failure_lrp[j][i], y_test))
+            for i in range(sr_predictions_failure_lrp_set[j].__len__()):
+                print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(sr_predictions_failure_lrp_set[j][i], y_test))
