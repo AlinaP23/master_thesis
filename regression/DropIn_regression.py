@@ -54,7 +54,7 @@ class DropInNetworkRegression(MLPRegressor):
 
         return activations
 
-    def fit_dropin(self, features_fit, labels_fit, np_seed, max_epochs):
+    def fit_dropin(self, features_fit, labels_fit, np_seed, epochs):
         """ Triggers the training of the DropInNetwork.
 
         Parameters
@@ -75,11 +75,14 @@ class DropInNetworkRegression(MLPRegressor):
 
         features_epochs = np.copy(features_fit)
         labels_epochs = np.copy(labels_fit)
-        #for i in range(1, max_epochs):
-            # create shuffled multiple epoch data set
-        #   features_epochs = np.concatenate((features_epochs, shuffle(features_fit)))
-        #    labels_epochs = np.concatenate((labels_epochs, shuffle(labels_fit)))
+        c = list(zip(features_fit, labels_fit))
 
+        for i in range(1, epochs):
+            # create shuffled multiple epoch data set
+            shuffled_c = shuffle(c)
+            features, labels = zip(*shuffled_c)
+            features_epochs = np.concatenate((features_epochs, features))
+            labels_epochs = np.concatenate((labels_epochs, labels))
         super().fit(features_epochs, labels_epochs)
 
         # reset parameter

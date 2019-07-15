@@ -48,7 +48,7 @@ class LearnCommittee:
 
         # initialize prob. of features to be chosen for weak classifier
         if p_features is not None:
-            self.p_features = p_features
+            self.p_features = np.copy(p_features)
         else:
             self.p_features = [None] * self.no_of_features
             for k in range(0, self.no_of_features):

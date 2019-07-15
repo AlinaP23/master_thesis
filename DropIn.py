@@ -106,6 +106,7 @@ class DropInNetwork(MLPClassifier):
         """
         self.train_pass = True
         self.seed = np_seed
+
         features_epochs = np.copy(features_fit)
         labels_epochs = np.copy(labels_fit)
         c = list(zip(features_fit, labels_fit))
@@ -117,5 +118,7 @@ class DropInNetwork(MLPClassifier):
             features_epochs = np.concatenate((features_epochs, features))
             labels_epochs = np.concatenate((labels_epochs, labels))
         super().fit(features_epochs, labels_epochs)
+
+        # reset parameter
         self.train_pass = False
 

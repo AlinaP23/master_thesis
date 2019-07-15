@@ -12,7 +12,7 @@ algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
                          "DropIn":  True,
                          "SelectiveRetraining": True}
-data_set = "WBC"
+data_set = "Wine"
 data_set_params = {"n_samples":     50000,
                    "n_features":    15,
                    "n_informative": 9,
@@ -31,7 +31,7 @@ data_set_params = {"n_samples":     50000,
 ms_random_state = 9
 ms_test_size = 0.3
 failure_simulation_np_seed = 7
-failure_percentages = [0.10, 0.2, 0.25, 0.3, 0.40, 0.55, 0.70, 0.80]
+failure_percentages = [0.10, 0.2, 0.25, 0.3, 0.40, 0.55, 0.6, 0.70, 0.80]
 random_failure = False
 multi_sensor_failure = True
 
@@ -61,7 +61,7 @@ x_test_failures = [data_lib.get_sensor_failure_test_set(x_test,
                                                         failure_percentage=p)
                    for p in failure_percentages]
 # LRP
-LRP_hidden_layer_sizes = [60, 60, 60]
+LRP_hidden_layer_sizes = [35, 35, 35]
 LRP_learning_rate_init = 0.1
 LRP_random_states = [7]
 LRP_seed = 9
@@ -72,29 +72,29 @@ LRP_dropout_threshold_max = 0.4
 LRP_dropout_threshold_min = 0.1
 
 # Learn++
-learn_hidden_layer_sizes = [30, 30, 30]
+learn_hidden_layer_sizes = [20, 20, 20]
 learn_learning_rate_init = 0.1
-learn_random_state = 9
-learn_np_seed = 5
-learn_no_of_weak_classifiers = [10, 20]
-learn_percentage_of_features = [0.3, 0.4, 0.6, 0.8]
+learn_random_state = 5
+learn_np_seed = 7
+learn_no_of_weak_classifiers = [30, 40, 50]
+learn_percentage_of_features = [0.15, 0.2, 0.3, 0.4, 0.6, 1]
 learn_missing_data_representation = None
 learn_p_features_standard = None
-learn_p_weak_classifier_threshold = 0.5
+learn_p_weak_classifier_threshold = 0.3
 
 # DropIn
-dropin_hidden_layer_sizes = [60, 60, 60]
+dropin_hidden_layer_sizes = [15, 20, 30, 30]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 9
-dropin_np_seed = 9
-p_dropin_standard = [0.3, 0.5, 0.8]
-dropin_epochs = 3
+dropin_np_seed = 8
+p_dropin_standard = [0.2, 0.35, 0.5, 0.6, 0.8, 1]
+dropin_epochs = 8
 
 # Selective Retraining
-sr_hidden_layer_sizes = [60, 60, 60]
+sr_hidden_layer_sizes = [50, 50, 50]
 sr_learning_rate_init = 0.1
-sr_random_state = 7
-sr_weight_threshold = [0.25, 0.5, 0.75]
+sr_random_state = 12
+sr_weight_threshold = [0.1, 0.25, 0.3, 0.5, 0.75]
 
 # --- LRP Score Calculation --- #
 if algorithms_to_execute["LRP"]:
@@ -243,8 +243,10 @@ if algorithms_to_execute["SelectiveRetraining"]:
     sr_original_predictions = []
     sr_original_predictions_failure_set = []
     sr_predictions = []
+    sr_predictions_lrp = []
     sr_predictions_failure_set = []
     sr_predictions_failure_lrp_set = []
+
     for j in range(sr_weight_threshold.__len__()):
         print("Training Selective Retraining Committee", j, "...")
         selective_committee = SelectiveRetrainingCommittee(learning_rate_init=sr_learning_rate_init,
@@ -261,13 +263,13 @@ if algorithms_to_execute["SelectiveRetraining"]:
         for sr_original_failure_test in x_test_failures:
             sr_original_predictions_failure.append(selective_committee.predict_without_retraining(sr_original_failure_test))
         sr_original_predictions_failure_set.append(sr_original_predictions_failure)
-        sr_predictions = selective_committee.predict(x_test, label_df)
+        sr_predictions.append(selective_committee.predict(x_test, label_df))
         sr_predictions_failure = []
         for sr_failure_test in x_test_failures:
             sr_predictions_failure.append(selective_committee.predict(sr_failure_test, label_df))
         sr_predictions_failure_set.append(sr_predictions_failure)
         if algorithms_to_execute["LRP"]:
-            sr_predictions_lrp = selective_committee.predict(x_test, label_df, avg_lrp_scores_normalized_inverted)
+            sr_predictions_lrp.append(selective_committee.predict(x_test, label_df, avg_lrp_scores_normalized_inverted))
             sr_predictions_failure_lrp = []
             for sr_failure_test_lrp in x_test_failures:
                 sr_predictions_failure_lrp.append(
@@ -294,16 +296,18 @@ if algorithms_to_execute["LRP"]:
     print("Inverted range prob.:")
     print(avg_lrp_scores_range_inverted)
 
+    print("")
     print("Accuracy Score - LRP Network: ")
     print("           w/o Sensor Failure: ", accuracy_score(lrp_predictions, y_test))
     for i in range(lrp_predictions_failure.__len__()):
         print("           w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(lrp_predictions_failure[i], y_test))
 
 if algorithms_to_execute["Learn++"]:
+    print("")
     print("Accuracy Score - Learn++:")
     for w in range(learn_no_of_weak_classifiers.__len__()):
         print("Number of weak classifiers: ", learn_no_of_weak_classifiers[w])
-        for pof in range(learn_percentage_of_features[w].__len__()):
+        for pof in range(learn_percentage_of_features.__len__()):
             print("Percentage of features: ", learn_percentage_of_features[pof])
             print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(learn_predictions[w][pof], y_test))
             for i in range(learn_predictions_failure_set[w][pof].__len__()):
@@ -314,6 +318,7 @@ if algorithms_to_execute["Learn++"]:
                     print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ", accuracy_score(learn_predictions_failure_lrp_set[w][pof][i], y_test))
 
 if algorithms_to_execute["DropIn"]:
+    print("")
     print("Accuracy Score - DropIn:")
     for k in range(p_dropin_standard.__len__()):
         print("DropIn Prob.:", p_dropin_standard[k])
@@ -329,16 +334,17 @@ if algorithms_to_execute["DropIn"]:
             print("w/  LRPr & w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(dropin_predictions_failure_lrp_r[i], y_test))
 
 if algorithms_to_execute["SelectiveRetraining"]:
+    print("")
     for j in range(sr_weight_threshold.__len__()):
-        print("Accuracy Score - Selective Retraining (Weight Threshold: ", sr_weight_threshold[j],"):")
+        print("Accuracy Score - Selective Retraining (Weight Threshold: ", sr_weight_threshold[j], "):")
         print("Accuracy Score - Without Retraining: ")
         print("           w/o Sensor Failure: ", accuracy_score(sr_original_predictions[j], y_test))
         for i in range(sr_original_predictions_failure_set[j].__len__()):
             print("           w/  Sensor Failure", failure_percentages[i],": ", accuracy_score(sr_original_predictions_failure_set[j][i], y_test))
         print("Accuracy Score - Selective Retraining: ")
         print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions[j], y_test))
-        for i in range(sr_predictions_failure[j].__len__()):
-            print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], ": ", accuracy_score(sr_predictions_failure[j][i], y_test))
+        for i in range(sr_predictions_failure_set[j].__len__()):
+            print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], ": ", accuracy_score(sr_predictions_failure_set[j][i], y_test))
         if algorithms_to_execute["LRP"]:
             print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions_lrp[j], y_test))
             for i in range(sr_predictions_failure_lrp_set[j].__len__()):

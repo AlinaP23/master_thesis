@@ -207,7 +207,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         X = sensor_data.iloc[:, 2:].values
         Y = sensor_data.iloc[:, 1]. values
 
-        activation = 'relu'
+        activation = 'logistic'
         labels = ["M", "B"]
 
     elif data_set == "OCR":
