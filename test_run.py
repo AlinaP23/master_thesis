@@ -1,19 +1,21 @@
-import data_lib
+import data_lib, imputation
 from LRP import LRPNetwork
 from LearnPlus import LearnCommittee
 from DropIn import DropInNetwork
 from SelectiveRetraining import SelectiveRetrainingCommittee
 from sklearn import model_selection
 from sklearn.metrics import accuracy_score
+from sklearn.neural_network import MLPClassifier
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     True,
-                         "Learn++": True,
-                         "DropIn":  True,
-                         "SelectiveRetraining": True}
-data_set = "OCR"
-data_set_params = {"n_samples":     50000,
+algorithms_to_execute = {"LRP":     False,
+                         "Learn++": False,
+                         "DropIn":  False,
+                         "SelectiveRetraining": False,
+                         "Imputation": True}
+data_set = "sklearn"
+data_set_params = {"n_samples":     500,
                    "n_features":    15,
                    "n_informative": 9,
                    "n_redundant":   3,
@@ -34,6 +36,7 @@ failure_simulation_np_seed = 7
 failure_percentages = [0.10, 0.2, 0.25, 0.3, 0.40, 0.55, 0.6, 0.70, 0.80]
 random_failure = False
 multi_sensor_failure = True
+n_nearest_neighbors = 3
 
 X, Y, activation, labels, label_df = data_lib.get_data_set(data_set,
                                                            n_samples=data_set_params["n_samples"],
@@ -60,6 +63,7 @@ x_test_failures = [data_lib.get_sensor_failure_test_set(x_test,
                                                         multi_sensor_failure=multi_sensor_failure,
                                                         failure_percentage=p)
                    for p in failure_percentages]
+
 # LRP
 LRP_hidden_layer_sizes = [120, 120, 120]
 LRP_learning_rate_init = 0.1
@@ -70,6 +74,11 @@ LRP_alpha = 2
 LRP_accuracy_threshold = 0.1
 LRP_dropout_threshold_max = 0.4
 LRP_dropout_threshold_min = 0.1
+
+# Imputation
+imputation_hidden_layer_sizes = [120, 120, 120]
+imputation_learning_rate_init = 0.1
+imputation_random_state = 3
 
 # Learn++
 learn_hidden_layer_sizes = [30, 30, 30]
@@ -95,6 +104,31 @@ sr_hidden_layer_sizes = [80, 80, 80]
 sr_learning_rate_init = 0.1
 sr_random_state = 12
 sr_weight_threshold = [0.1, 0.25, 0.3, 0.5, 0.75]
+
+# --- Imputation --- #
+if algorithms_to_execute["Imputation"]:
+    x_test_knn_imputations = [imputation.knn_imputation(x, n_nearest_neighbors) for x in x_test_failures]
+    x_test_median_imputations = [imputation.mean_imputation(x) for x in x_test_failures]
+    x_test_mean_imputations = [imputation.median_imputation(x) for x in x_test_failures]
+
+    print("Training Imputation Network...")
+    imputation_nn = MLPClassifier(hidden_layer_sizes=imputation_hidden_layer_sizes,
+                                  learning_rate_init=imputation_learning_rate_init,
+                                  activation=activation,
+                                  random_state=imputation_random_state)
+    imputation_nn.fit(x_train, y_train)
+
+    print("Validating Imputation NN...")
+    imputation_predictions = imputation_nn.predict(x_test)
+    knn_imputation_predictions_failure = []
+    median_imputation_predictions_failure = []
+    mean_imputation_predictions_failure = []
+    for knn_failure_test in x_test_knn_imputations:
+        knn_imputation_predictions_failure.append(imputation_nn.predict(knn_failure_test))
+    for mean_failure_test in x_test_mean_imputations:
+        mean_imputation_predictions_failure.append(imputation_nn.predict(mean_failure_test))
+    for median_failure_test in x_test_median_imputations:
+        median_imputation_predictions_failure.append(imputation_nn.predict(median_failure_test))
 
 # --- LRP Score Calculation --- #
 if algorithms_to_execute["LRP"]:
@@ -302,6 +336,19 @@ if algorithms_to_execute["LRP"]:
     for i in range(lrp_predictions_failure.__len__()):
         print("           w/  Sensor Failure (", failure_percentages[i], "): ", accuracy_score(lrp_predictions_failure[i], y_test))
 
+if algorithms_to_execute["Imputation"]:
+    print("")
+    print("Accuracy Score - Imputation:")
+    print("           w/o Sensor Failure: ", accuracy_score(imputation_predictions, y_test))
+    for i in range(median_imputation_predictions_failure.__len__()):
+        print("           w/  Median Imputation (", failure_percentages[i], "): ",
+              accuracy_score(median_imputation_predictions_failure[i], y_test))
+    for i in range(mean_imputation_predictions_failure.__len__()):
+        print("           w/  Mean Imputation (", failure_percentages[i], "): ",
+              accuracy_score(mean_imputation_predictions_failure[i], y_test))
+    for i in range(knn_imputation_predictions_failure.__len__()):
+        print("           w/  kNN Imputation (", failure_percentages[i], "): ",
+              accuracy_score(knn_imputation_predictions_failure[i], y_test))
 if algorithms_to_execute["Learn++"]:
     print("")
     print("Accuracy Score - Learn++:")

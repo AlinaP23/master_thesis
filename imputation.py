@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.neighbors import KNeighborsClassifier
+from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
+from sklearn import utils
 
 def knn_imputation(x_test_failure, n_neighbors):
     x_test_knn_imputation = np.copy(x_test_failure)
@@ -13,6 +14,10 @@ def knn_imputation(x_test_failure, n_neighbors):
             indices = np.where(x_test_failure.T[j] == 0)[0]
             X = np.delete(np.delete(np.copy(x_test_failure), j, axis=1), indices, axis=0)
             y = np.delete(np.copy(x_test_failure.T[j]), indices)
+            if utils.multiclass.type_of_target(y) == 'continuous':
+                knn = KNeighborsRegressor(n_neighbors=n_neighbors)
+            else:
+                knn = KNeighborsClassifier(n_neighbors=n_neighbors)
             knn.fit(X, y)
             x_test_knn_imputation[i][j] = knn.predict([np.delete(np.copy(x_test_failure[i]), j)])
     return x_test_knn_imputation
@@ -53,11 +58,3 @@ def median_imputation(x_test_failure):
             x_test_median_imputation[i][j] = medians[j]
 
     return x_test_median_imputation
-
-x_f = [[1,2,3,0],
-       [0,4,0,2],
-       [3,0,5,1],
-       [3,4,0,3]]
-print(mean_imputation(x_f))
-print(median_imputation(x_f))
-print(knn_imputation(x_f, 2))
