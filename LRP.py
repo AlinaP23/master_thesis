@@ -261,6 +261,7 @@ class LRPNetwork:
     @staticmethod
     def lrp_scores_to_percentage(average_lrp_scores):
         """ Converts the raw LRP scores to percentages. To be used as input to Learn++.
+            The inverted values will be used as input to Selective Retraining.
 
         Parameters
         ----------

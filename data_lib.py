@@ -212,13 +212,13 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
     elif data_set == "OCR":
         # https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits
-        sensor_data = pd.read_csv('./data/OCR/optdigits.tes', delimiter=",", header=None)
-        sensor_data = sensor_data.append(pd.read_csv('./data/OCR/optdigits.tra', delimiter=" ", header=None))
+        sensor_data = pd.read_csv('./data/OCR/optdigits.tra', delimiter=",", header=None)
+        sensor_data = sensor_data.append(pd.read_csv('./data/OCR/optdigits.tes', delimiter=",", header=None))
 
         X = sensor_data.iloc[:, :63].values
         Y = sensor_data.iloc[:, 64].values
 
-        activation = 'relu'
+        activation = 'logistic'
         labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
     elif data_set == "ION":

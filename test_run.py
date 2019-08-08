@@ -12,7 +12,7 @@ algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
                          "DropIn":  True,
                          "SelectiveRetraining": True}
-data_set = "Wine"
+data_set = "OCR"
 data_set_params = {"n_samples":     50000,
                    "n_features":    15,
                    "n_informative": 9,
@@ -61,29 +61,29 @@ x_test_failures = [data_lib.get_sensor_failure_test_set(x_test,
                                                         failure_percentage=p)
                    for p in failure_percentages]
 # LRP
-LRP_hidden_layer_sizes = [35, 35, 35]
+LRP_hidden_layer_sizes = [120, 120, 120]
 LRP_learning_rate_init = 0.1
-LRP_random_states = [7]
-LRP_seed = 9
+LRP_random_states = [24, 12, 3]
+LRP_seed = 5
 LRP_test_size = 0.1
 LRP_alpha = 2
-LRP_accuracy_threshold = 0.3
+LRP_accuracy_threshold = 0.1
 LRP_dropout_threshold_max = 0.4
 LRP_dropout_threshold_min = 0.1
 
 # Learn++
-learn_hidden_layer_sizes = [20, 20, 20]
+learn_hidden_layer_sizes = [30, 30, 30]
 learn_learning_rate_init = 0.1
 learn_random_state = 5
 learn_np_seed = 7
-learn_no_of_weak_classifiers = [30, 40, 50]
+learn_no_of_weak_classifiers = [30, 50, 70]
 learn_percentage_of_features = [0.15, 0.2, 0.3, 0.4, 0.6, 1]
 learn_missing_data_representation = None
 learn_p_features_standard = None
 learn_p_weak_classifier_threshold = 0.3
 
 # DropIn
-dropin_hidden_layer_sizes = [15, 20, 30, 30]
+dropin_hidden_layer_sizes = [80, 80, 80]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 9
 dropin_np_seed = 8
@@ -91,7 +91,7 @@ p_dropin_standard = [0.2, 0.35, 0.5, 0.6, 0.8, 1]
 dropin_epochs = 8
 
 # Selective Retraining
-sr_hidden_layer_sizes = [50, 50, 50]
+sr_hidden_layer_sizes = [80, 80, 80]
 sr_learning_rate_init = 0.1
 sr_random_state = 12
 sr_weight_threshold = [0.1, 0.25, 0.3, 0.5, 0.75]
