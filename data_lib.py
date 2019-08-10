@@ -199,6 +199,9 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [1, 2, 3]
+        probabilities = [0.2, 0.3, 0.4, 0.5, 0.6,
+                         0.7, 0.8, 0.1, 0.1, 0.1,
+                         0.4, 0.2, 0.3]
 
     elif data_set == "WBC":
         # https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
@@ -215,7 +218,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         sensor_data = pd.read_csv('./data/OCR/optdigits.tra', delimiter=",", header=None)
         sensor_data = sensor_data.append(pd.read_csv('./data/OCR/optdigits.tes', delimiter=",", header=None))
 
-        X = sensor_data.iloc[:, :63].values
+        X = sensor_data.iloc[:, 1:63].values
         Y = sensor_data.iloc[:, 64].values
 
         activation = 'logistic'
@@ -265,12 +268,13 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
             single_label[i] = 1
             labels.append(single_label)
         data_frame = True
+        probabilities = [np.random(9) / 10] * n_features
 
-    return X, Y, activation, labels, data_frame
+    return X, Y, activation, labels, data_frame, probabilities
 
 
 def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_sensor_failure=False,
-                                failure_percentage=0.2):
+                                failure_percentage=0.2, probability_known=False, probabilities=None):
     """Simulates sensor failure within the test set that is given as input.
     Parameters
     ----------
@@ -297,14 +301,14 @@ def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_
 
     # --- MULTI-SENSOR FAILURE --- #
     # simulate random failure of random number of sensors
-    if multi_sensor_failure and random:
+    if multi_sensor_failure and random and not probability_known:
         for i in range(0, len(original_test_set)):
             no_failing_sensors = np.random.randint(1, len(features))
             sensor_failure = np.random.choice(features, no_failing_sensors, replace=False).tolist()
             x_test_failure[i, sensor_failure] = 0
 
     # ensure equal distribution of "sensor failures", i.e. equal percentage of missing data for each feature
-    elif multi_sensor_failure and not random:
+    elif multi_sensor_failure and not random and not probability_known:
         size_missing_data = int(len(original_test_set) * failure_percentage)
         for i in features:
             missing_data = np.random.choice(range(0, len(original_test_set)), size_missing_data,
@@ -313,13 +317,13 @@ def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_
 
     # --- SINGLE SENSOR FAILURE --- #
     # simulate random failure of one sensor per tuple
-    elif not multi_sensor_failure and random:
+    elif not multi_sensor_failure and random and not probability_known:
         for i in range(0, len(original_test_set)):
             sensor_failure = np.random.choice(features, 1, replace=False).tolist()
             x_test_failure[i, sensor_failure] = 0
 
     # ensure equal distribution of "sensor failures", i.e. equal percentage of missing data for each feature
-    elif not multi_sensor_failure and not random:
+    elif not multi_sensor_failure and not random and not probability_known:
         missing_data = list(range(0, len(original_test_set)))
         np.random.shuffle(missing_data)
         tuples_per_feature = int(len(original_test_set) / len(features))
@@ -327,5 +331,11 @@ def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_
             start = i * tuples_per_feature + 1
             end = start + tuples_per_feature
             x_test_failure[missing_data[start:end], i] = 0
+
+    # --- FAILURE PROBABILITY KNOWN --- #
+    elif probability_known:
+        for i in range(0, len(original_test_set)):
+            sensor_failure = np.where(np.random.binomial(1, probabilities) == 0)[0]
+            x_test_failure[i, sensor_failure] = 0
 
     return x_test_failure

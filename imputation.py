@@ -9,17 +9,19 @@ def knn_imputation(x_test_failure, n_neighbors):
     for i in range(len(x_test_failure)):
         missing_data = np.where(x_test_failure[i] == 0)[0]
         for j in missing_data:
-            knn = KNeighborsClassifier(n_neighbors=n_neighbors)
             # find indices of all tuples missing attribute j -> they should not be used within kNN
             indices = np.where(x_test_failure.T[j] == 0)[0]
             X = np.delete(np.delete(np.copy(x_test_failure), j, axis=1), indices, axis=0)
             y = np.delete(np.copy(x_test_failure.T[j]), indices)
-            if utils.multiclass.type_of_target(y) == 'continuous':
-                knn = KNeighborsRegressor(n_neighbors=n_neighbors)
-            else:
-                knn = KNeighborsClassifier(n_neighbors=n_neighbors)
-            knn.fit(X, y)
-            x_test_knn_imputation[i][j] = knn.predict([np.delete(np.copy(x_test_failure[i]), j)])
+            if len(X) > 0:
+                if len(X) < n_neighbors:
+                    n_neighbors = len(X)
+                if utils.multiclass.type_of_target(y) == 'continuous':
+                    knn = KNeighborsRegressor(n_neighbors=n_neighbors)
+                else:
+                    knn = KNeighborsClassifier(n_neighbors=n_neighbors)
+                knn.fit(X, y)
+                x_test_knn_imputation[i][j] = knn.predict([np.delete(np.copy(x_test_failure[i]), j)])
     return x_test_knn_imputation
 
 
