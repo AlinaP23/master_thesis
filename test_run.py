@@ -125,6 +125,14 @@ if algorithms_to_execute["Imputation"]:
     x_test_median_imputations = [imputation.mean_imputation(x) for x in x_test_failures]
     x_test_mean_imputations = [imputation.median_imputation(x) for x in x_test_failures]
 
+    x_test_median_known = None
+    x_test_mean_known = None
+    x_test_knn_known = None
+    if algorithms_to_execute["Failure_Known"]:
+        x_test_knn_known = imputation.knn_imputation(x_known_test_failures, n_nearest_neighbors)
+        x_test_median_known = imputation.median_imputation(x_known_test_failures)
+        x_test_mean_known = imputation.mean_imputation(x_known_test_failures)
+
     print("Training Imputation Network...")
     imputation_nn = MLPClassifier(hidden_layer_sizes=imputation_hidden_layer_sizes,
                                   learning_rate_init=imputation_learning_rate_init,
@@ -140,6 +148,10 @@ if algorithms_to_execute["Imputation"]:
         mean_imputation_predictions_failure.append(imputation_nn.predict(mean_failure_test))
     for median_failure_test in x_test_median_imputations:
         median_imputation_predictions_failure.append(imputation_nn.predict(median_failure_test))
+    if algorithms_to_execute["Failure_Known"]:
+        knn_pred_failure_known = imputation_nn.predict(x_test_knn_known)
+        median_pred_failure_known = imputation_nn.predict(x_test_median_known)
+        mean_pred_failure_known = imputation_nn.predict(x_test_mean_known)
 
 # --- LRP Score Calculation --- #
 avg_lrp_scores = None
@@ -183,10 +195,13 @@ if algorithms_to_execute["LRP"]:
 # --- Learn++ --- #
 learn_predictions = []
 learn_predictions_lrp = []
+learn_predictions_lrp_inverted = []
 learn_predictions_failure_set = []
 learn_predictions_failure_lrp_set = []
+learn_predictions_failure_lrp_inverted_set = []
 learn_predictions_known = []
 learn_predictions_known_lrp = []
+learn_predictions_known_lrp_inverted = []
 learn_predictions_known_standard = []
 
 if algorithms_to_execute["Learn++"]:
@@ -195,10 +210,13 @@ if algorithms_to_execute["Learn++"]:
     for w in learn_no_of_weak_classifiers:
         wlearn_predictions = []
         wlearn_predictions_lrp = []
+        wlearn_predictions_lrp_inverted = []
         wlearn_predictions_failure_set = []
         wlearn_predictions_failure_lrp_set = []
+        wlearn_predictions_failure_lrp_inverted_set = []
         wlearn_predictions_known = []
         wlearn_predictions_known_lrp = []
+        wlearn_predictions_known_lrp_inverted = []
         wlearn_predictions_known_standard = []
         for pof in learn_percentage_of_features:
             learn_committee = LearnCommittee(no_of_weak_classifiers=w,
@@ -215,6 +233,7 @@ if algorithms_to_execute["Learn++"]:
             learn_committee.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
             learn_committee_lrp = None
+            learn_committee_lrp_inverted = None
             if algorithms_to_execute["LRP"]:
                 # LRP
                 print("Training LRP Learn++ Committee...")
@@ -230,6 +249,20 @@ if algorithms_to_execute["Learn++"]:
                                                      activation=activation,
                                                      threshold=learn_p_weak_classifier_threshold)
                 learn_committee_lrp.fit(x_train, y_train, learn_np_seed, learn_random_state)
+
+                learn_committee_lrp_inverted = \
+                    LearnCommittee(no_of_weak_classifiers=w,
+                                   percentage_of_features=pof,
+                                   no_of_features=len(X[0]),
+                                   no_of_out_nodes=len(labels),
+                                   hidden_layer_sizes=learn_hidden_layer_sizes,
+                                   learning_rate_init=learn_learning_rate_init,
+                                   labels=labels,
+                                   missing_data_representation=learn_missing_data_representation,
+                                   p_features=avg_lrp_scores_normalized_inverted,
+                                   activation=activation,
+                                   threshold=learn_p_weak_classifier_threshold)
+                learn_committee_lrp_inverted.fit(x_train, y_train, learn_np_seed, learn_random_state)
 
             learn_committee_known = None
             if algorithms_to_execute["Failure_Known"]:
@@ -263,16 +296,27 @@ if algorithms_to_execute["Learn++"]:
                 for learn_failure_test_lrp in x_test_failures:
                     wlearn_predictions_failure_lrp.append(learn_committee_lrp.predict(learn_failure_test_lrp, label_df))
                 wlearn_predictions_failure_lrp_set.append(wlearn_predictions_failure_lrp)
+
+                wlearn_predictions_lrp_inverted.append(learn_committee_lrp_inverted.predict(x_test, label_df))
+                wlearn_predictions_failure_lrp_inverted = []
+                for learn_failure_test_lrp in x_test_failures:
+                    wlearn_predictions_failure_lrp_inverted.\
+                        append(learn_committee_lrp_inverted.predict(learn_failure_test_lrp, label_df))
+                wlearn_predictions_failure_lrp_inverted_set.append(wlearn_predictions_failure_lrp_inverted)
             if algorithms_to_execute["Failure_Known"]:
                 wlearn_predictions_known.append(learn_committee_known.predict(x_known_test_failures, label_df))
                 wlearn_predictions_known_lrp.append(learn_committee_lrp.predict(x_known_test_failures, label_df))
+                wlearn_predictions_known_lrp_inverted.append(learn_committee_lrp_inverted.predict(x_known_test_failures, label_df))
                 wlearn_predictions_known_standard.append(learn_committee.predict(x_known_test_failures, label_df))
         learn_predictions.append(wlearn_predictions)
         learn_predictions_lrp.append(wlearn_predictions_lrp)
+        learn_predictions_lrp_inverted.append(wlearn_predictions_lrp_inverted)
         learn_predictions_failure_set.append(wlearn_predictions_failure_set)
         learn_predictions_failure_lrp_set.append(wlearn_predictions_failure_lrp_set)
+        learn_predictions_failure_lrp_inverted_set.append(wlearn_predictions_failure_lrp_inverted_set)
         learn_predictions_known.append(wlearn_predictions_known)
         learn_predictions_known_lrp.append(wlearn_predictions_known_lrp)
+        learn_predictions_known_lrp_inverted.append(wlearn_predictions_known_lrp_inverted)
         learn_predictions_known_standard.append(wlearn_predictions_known_standard)
 
 # --- DropIn --- #
@@ -424,16 +468,21 @@ if algorithms_to_execute["LRP"]:
 if algorithms_to_execute["Imputation"]:
     print("")
     print("Accuracy Score - Imputation:")
-    print("           w/o Sensor Failure: ", accuracy_score(imputation_predictions, y_test))
+    print("          w/o Sensor Failure: ", accuracy_score(imputation_predictions, y_test))
     for i in range(median_imputation_predictions_failure.__len__()):
-        print("           w/  Median Imputation (", failure_percentages[i], "): ",
+        print("          w/  Median Imputation (", failure_percentages[i], "): ",
               accuracy_score(median_imputation_predictions_failure[i], y_test))
     for i in range(mean_imputation_predictions_failure.__len__()):
-        print("           w/  Mean Imputation (", failure_percentages[i], "): ",
+        print("          w/  Mean Imputation (", failure_percentages[i], "): ",
               accuracy_score(mean_imputation_predictions_failure[i], y_test))
     for i in range(knn_imputation_predictions_failure.__len__()):
-        print("           w/  kNN Imputation (", failure_percentages[i], "): ",
+        print("          w/  kNN Imputation (", failure_percentages[i], "): ",
               accuracy_score(knn_imputation_predictions_failure[i], y_test))
+    if algorithms_to_execute["Failure_Known"]:
+        print("          w/  Median Imputation & w/ Failure Known: ", accuracy_score(median_pred_failure_known, y_test))
+        print("          w/  Mean Imputation & w/ Failure Known: ", accuracy_score(mean_pred_failure_known, y_test))
+        print("          w/  kNN Imputation & w/ Failure Known: ", accuracy_score(knn_pred_failure_known, y_test))
+
 if algorithms_to_execute["Learn++"]:
     print("")
     print("Accuracy Score - Learn++:")
@@ -450,11 +499,17 @@ if algorithms_to_execute["Learn++"]:
                 for i in range(learn_predictions_failure_lrp_set[w][pof].__len__()):
                     print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ",
                           accuracy_score(learn_predictions_failure_lrp_set[w][pof][i], y_test))
+                print("w/ LRPinv   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp[w][pof], y_test))
+                for i in range(learn_predictions_failure_lrp_inverted_set[w][pof].__len__()):
+                    print("w/ LRPinv   & w/  Sensor Failure(", failure_percentages[i], "): ",
+                          accuracy_score(learn_predictions_failure_lrp_inverted_set[w][pof][i], y_test))
             if algorithms_to_execute["Failure_Known"]:
                 print("w/ Failure Known: ",
                       accuracy_score(learn_predictions_known[w][pof], y_test))
                 print("w/ Failure Known & w/ LRP: ",
                       accuracy_score(learn_predictions_known_lrp[w][pof], y_test))
+                print("w/ Failure Known & w/ LRPinv: ",
+                      accuracy_score(learn_predictions_known_lrp_inverted[w][pof], y_test))
                 print("w/ Failure Known & w/ Standard Training: ",
                       accuracy_score(learn_predictions_known_standard[w][pof], y_test))
 
