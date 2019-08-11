@@ -2,6 +2,7 @@ import numpy as np
 from sklearn.neighbors import KNeighborsClassifier, KNeighborsRegressor
 from sklearn import utils
 
+
 def knn_imputation(x_test_failure, n_neighbors):
     x_test_knn_imputation = np.copy(x_test_failure)
     x_test_failure = np.array(x_test_failure)
@@ -33,7 +34,10 @@ def mean_imputation(x_test_failure):
     x_test_failure = np.array(x_test_failure)
     for column in x_test_failure.T:
         column = np.extract(column != 0, column)
-        means.append(np.mean(column))
+        if len(column) == 0:
+            means.append(0)
+        else:
+            means.append(np.mean(column))
 
     # imputation: replace missing data with means
     for i in range(len(x_test_mean_imputation)):
@@ -43,6 +47,7 @@ def mean_imputation(x_test_failure):
 
     return x_test_mean_imputation
 
+
 def median_imputation(x_test_failure):
     x_test_median_imputation = np.copy(x_test_failure)
     medians = []
@@ -51,7 +56,10 @@ def median_imputation(x_test_failure):
     x_test_failure = np.array(x_test_failure)
     for column in x_test_failure.T:
         column = np.extract(column != 0, column)
-        medians.append(np.median(column))
+        if len(column) == 0:
+            medians.append(0)
+        else:
+            medians.append(np.median(column))
 
     # imputation: replace missing data with medians
     for i in range(len(x_test_median_imputation)):
