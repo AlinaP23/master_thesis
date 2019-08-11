@@ -199,9 +199,9 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [1, 2, 3]
-        probabilities = [0.2, 0.3, 0.4, 0.5, 0.6,
-                         0.7, 0.8, 0.1, 0.1, 0.1,
-                         0.4, 0.2, 0.3]
+        probabilities = [0.1, 0.0, 0.2, 0.2, 0.3,
+                         0.5, 0.8, 0.1, 0.1, 0.1,
+                         0.1, 0.1, 0.0]
 
     elif data_set == "WBC":
         # https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
