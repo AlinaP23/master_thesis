@@ -121,4 +121,3 @@ class DropInNetwork(MLPClassifier):
 
         # reset parameter
         self.train_pass = False
-

@@ -12,11 +12,11 @@ from sklearn.neural_network import MLPClassifier
 # General
 algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
-                         "DropIn":  True,
-                         "SelectiveRetraining": True,
-                         "Imputation": True,
+                         "DropIn":  False,
+                         "SelectiveRetraining": False,
+                         "Imputation": False,
                          "Failure_Known": True}
-data_set = "Wine"
+data_set = "OCR"
 data_set_params = {"n_samples":     5000,
                    "n_features":    15,
                    "n_informative": 15,
@@ -32,6 +32,7 @@ data_set_params = {"n_samples":     5000,
                    "scale":         1.0,
                    "data_shuffle":  True,
                    "random_state":  7}
+
 ms_random_state = 9
 ms_test_size = 0.3
 failure_simulation_np_seed = 7
@@ -40,38 +41,6 @@ random_failure = False
 multi_sensor_failure = True
 n_nearest_neighbors = 3
 
-X, Y, activation, labels, label_df, probabilities = \
-    data_lib.get_data_set(data_set,
-                          n_samples=data_set_params["n_samples"],
-                          n_features=data_set_params["n_features"],
-                          n_informative=data_set_params["n_informative"],
-                          n_redundant=data_set_params["n_redundant"],
-                          n_repeated=data_set_params["n_repeated"],
-                          n_classes=data_set_params["n_classes"],
-                          n_clusters_per_class=data_set_params["n_clusters_per_class"],
-                          weights=data_set_params["weights"],
-                          flip_y=data_set_params["flip_y"],
-                          class_sep=data_set_params["class_sep"],
-                          hypercube=data_set_params["hypercube"],
-                          shift=data_set_params["shift"],
-                          scale=data_set_params["scale"],
-                          data_shuffle=data_set_params["data_shuffle"],
-                          random_state=data_set_params["random_state"])
-x_train, x_test, y_train, y_test = \
-    model_selection.train_test_split(X, Y, test_size=ms_test_size, random_state=ms_random_state, stratify=Y)
-
-x_test_failures = [data_lib.get_sensor_failure_test_set(x_test,
-                                                        np_seed=failure_simulation_np_seed,
-                                                        random=random_failure,
-                                                        multi_sensor_failure=multi_sensor_failure,
-                                                        failure_percentage=p)
-                   for p in failure_percentages]
-x_known_test_failures = None
-if algorithms_to_execute["Failure_Known"]:
-    x_known_test_failures = data_lib.get_sensor_failure_test_set(x_test,
-                                                                 np_seed=failure_simulation_np_seed,
-                                                                 probability_known=True,
-                                                                 probabilities=probabilities)
 # LRP
 LRP_hidden_layer_sizes = [70, 70, 70]
 LRP_learning_rate_init = 0.1
@@ -89,7 +58,7 @@ imputation_learning_rate_init = 0.1
 imputation_random_state = 3
 
 # Learn++
-learn_hidden_layer_sizes = [20, 20, 20]
+learn_hidden_layer_sizes = [50, 50, 50]
 learn_learning_rate_init = 0.1
 learn_random_state = 5
 learn_np_seed = 7
@@ -112,6 +81,41 @@ sr_hidden_layer_sizes = [70, 70, 70]
 sr_learning_rate_init = 0.1
 sr_random_state = 7
 sr_weight_threshold = [0.1, 0.25, 0.3, 0.5, 0.75]
+
+# --- Data Preparation --- #
+X, Y, activation, labels, label_df, probabilities = \
+    data_lib.get_data_set(data_set,
+                          n_samples=data_set_params["n_samples"],
+                          n_features=data_set_params["n_features"],
+                          n_informative=data_set_params["n_informative"],
+                          n_redundant=data_set_params["n_redundant"],
+                          n_repeated=data_set_params["n_repeated"],
+                          n_classes=data_set_params["n_classes"],
+                          n_clusters_per_class=data_set_params["n_clusters_per_class"],
+                          weights=data_set_params["weights"],
+                          flip_y=data_set_params["flip_y"],
+                          class_sep=data_set_params["class_sep"],
+                          hypercube=data_set_params["hypercube"],
+                          shift=data_set_params["shift"],
+                          scale=data_set_params["scale"],
+                          data_shuffle=data_set_params["data_shuffle"],
+                          random_state=data_set_params["random_state"])
+
+x_train, x_test, y_train, y_test = \
+    model_selection.train_test_split(X, Y, test_size=ms_test_size, random_state=ms_random_state, stratify=Y)
+
+x_test_failures = [data_lib.get_sensor_failure_test_set(x_test,
+                                                        np_seed=failure_simulation_np_seed,
+                                                        random=random_failure,
+                                                        multi_sensor_failure=multi_sensor_failure,
+                                                        failure_percentage=p)
+                   for p in failure_percentages]
+x_known_test_failures = None
+if algorithms_to_execute["Failure_Known"]:
+    x_known_test_failures = data_lib.get_sensor_failure_test_set(x_test,
+                                                                 np_seed=failure_simulation_np_seed,
+                                                                 probability_known=True,
+                                                                 probabilities=probabilities)
 
 # --- Imputation --- #
 knn_imputation_predictions_failure = []

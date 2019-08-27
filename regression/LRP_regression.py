@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-import cmath
 from sklearn.neural_network import MLPRegressor
 from sklearn.utils import check_array
 from sklearn import model_selection
@@ -253,7 +252,7 @@ class LRPNetworkRegression:
                             if weight_matrix[i, connection_n] < 0:
                                 neg_sum_effects_on_k += activation_matrix[layer_n - 1][0][i] \
                                                         * weight_matrix[i, connection_n]
-                        # calculate the relevance of node j
+                        # calculate the negative relevance of node j
                         if neg_effect_j_on_k != 0:
                             negative_relevance += relevance_matrix[0][connection_n] \
                                                   * (neg_effect_j_on_k / neg_sum_effects_on_k)
@@ -268,6 +267,7 @@ class LRPNetworkRegression:
     @staticmethod
     def lrp_scores_to_percentage(average_lrp_scores):
         """ Converts the raw LRP scores to percentages. To be used as input to Learn++.
+            The inverted values will be used as input to Selective Retraining.
 
         Parameters
         ----------

@@ -74,6 +74,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
     """
     data_frame = False
     activation = 'logistic'
+    np.random.seed(5)
     if data_set == "iris":
         iris = pd.read_csv('./data/iris.csv')
 
@@ -223,6 +224,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        probabilities = np.random.rand(62)
 
     elif data_set == "ION":
         # https://archive.ics.uci.edu/ml/datasets/ionosphere
@@ -268,7 +270,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
             single_label[i] = 1
             labels.append(single_label)
         data_frame = True
-        probabilities = [np.random(9) / 10] * n_features
+        probabilities = [np.random()]  * n_features
 
     return X, Y, activation, labels, data_frame, probabilities
 

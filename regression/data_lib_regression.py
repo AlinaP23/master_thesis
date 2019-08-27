@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.utils import shuffle
 from sklearn.datasets import make_regression
 
 
@@ -51,6 +52,9 @@ def get_data_set(data_set, n_samples=100, n_features=100, n_informative=10, n_ta
     activation: String
         Activation function to be used in a neural network when predicting the target values.
     """
+    data_frame = False
+    activation = 'logistic'
+    np.random.seed(5)
     if data_set == "iris":
         data = 'iris'
     elif data_set == "income":
@@ -68,12 +72,13 @@ def get_data_set(data_set, n_samples=100, n_features=100, n_informative=10, n_ta
                                coef=coef,
                                random_state=random_state)
         activation = 'logistic'
+        probabilities = [np.random()] * n_features
 
-    return X, Y, activation
+    return X, Y, activation, probabilities
 
 
 def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_sensor_failure=False,
-                                failure_percentage=0.2):
+                                failure_percentage=0.2, probability_known=False, probabilities=None):
     """Simulates sensor failure within the test set that is given as input.
     Parameters
     ----------
@@ -100,14 +105,14 @@ def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_
 
     # --- MULTI-SENSOR FAILURE --- #
     # simulate random failure of random number of sensors
-    if multi_sensor_failure and random:
+    if multi_sensor_failure and random and not probability_known:
         for i in range(0, len(original_test_set)):
             no_failing_sensors = np.random.randint(1, len(features))
             sensor_failure = np.random.choice(features, no_failing_sensors, replace=False).tolist()
             x_test_failure[i, sensor_failure] = 0
 
     # ensure equal distribution of "sensor failures", i.e. equal percentage of missing data for each feature
-    elif multi_sensor_failure and not random:
+    elif multi_sensor_failure and not random and not probability_known:
         size_missing_data = int(len(original_test_set) * failure_percentage)
         for i in features:
             missing_data = np.random.choice(range(0, len(original_test_set)), size_missing_data,
@@ -116,13 +121,13 @@ def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_
 
     # --- SINGLE SENSOR FAILURE --- #
     # simulate random failure of one sensor per tuple
-    elif not multi_sensor_failure and random:
+    elif not multi_sensor_failure and random and not probability_known:
         for i in range(0, len(original_test_set)):
             sensor_failure = np.random.choice(features, 1, replace=False).tolist()
             x_test_failure[i, sensor_failure] = 0
 
     # ensure equal distribution of "sensor failures", i.e. equal percentage of missing data for each feature
-    elif not multi_sensor_failure and not random:
+    elif not multi_sensor_failure and not random and not probability_known:
         missing_data = list(range(0, len(original_test_set)))
         np.random.shuffle(missing_data)
         tuples_per_feature = int(len(original_test_set) / len(features))
@@ -130,5 +135,11 @@ def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_
             start = i * tuples_per_feature + 1
             end = start + tuples_per_feature
             x_test_failure[missing_data[start:end], i] = 0
+
+    # --- FAILURE PROBABILITY KNOWN --- #
+    elif probability_known:
+        for i in range(0, len(original_test_set)):
+            sensor_failure = np.where(np.random.binomial(1, probabilities) == 0)[0]
+            x_test_failure[i, sensor_failure] = 0
 
     return x_test_failure
