@@ -20,6 +20,7 @@ class DropInNetwork(MLPClassifier):
         self.train_pass = False
         self.dropout_arrays = []
         self.p_dropin = p_dropin
+        self.sequence_length = 1
         super().__init__(hidden_layer_sizes=hidden_layer_sizes,
                          learning_rate_init=learning_rate_init,
                          random_state=random_state,
@@ -38,13 +39,16 @@ class DropInNetwork(MLPClassifier):
         # Test if dropin needs to be implemented as method is called during training
         if self.train_pass:
             self.dropout_arrays = [None] * len(activations[0])
+            dropout_array = [None]
             np.random.seed(self.seed)
             for j in range(len(activations[0])):
                 # DropIn implementation
-                if type(self.p_dropin) is list:
-                    self.dropout_arrays[j] = np.random.binomial(1, self.p_dropin)
-                else:
-                    self.dropout_arrays[j] = np.random.binomial(1, self.p_dropin, size=activations[0][j].shape)
+                if (j == 0) or (j % self.sequence_length == 0):
+                    if type(self.p_dropin) is list:
+                        dropout_array = np.random.binomial(1, self.p_dropin)
+                    else:
+                        dropout_array= np.random.binomial(1, self.p_dropin, size=activations[0][j].shape)
+                self.dropout_arrays[j] = dropout_array
                 activations[0][j] = activations[0][j] * self.dropout_arrays[j]
         super()._forward_pass(activations)
 
@@ -110,6 +114,7 @@ class DropInNetwork(MLPClassifier):
         """
         self.train_pass = True
         self.seed = np_seed
+        self.sequence_length = sequence_length
         np.random.seed(self.seed)
         no_instances = labels_fit.__len__()
 
