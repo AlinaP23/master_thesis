@@ -291,6 +291,10 @@ def get_sensor_failure_test_set(original_test_set, np_seed, random=False, multi_
         If True: failure of a random number of sensors is simulated; if False: failure of one sensor per sample only
     failure_percentage: float
         Determines the percentage of missing data per feature (if random = False)
+    probability_known: boolean
+        If True: sensor failure probability is given (probabilities)
+    probabilities: array
+        Determines the sensor failure probabilities (if known)
 
     Returns
     ----------

@@ -92,7 +92,7 @@ class DropInNetwork(MLPClassifier):
 
         return coef_grads, intercept_grads
 
-    def fit_dropin(self, features_fit, labels_fit, np_seed, epochs, sequence_length = None):
+    def fit_dropin(self, features_fit, labels_fit, np_seed, epochs, sequence_length=None):
         """ Triggers the training of the DropInNetwork.
 
         Parameters

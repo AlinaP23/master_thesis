@@ -5,9 +5,7 @@ DropIn: https://arxiv.org/pdf/1705.02643.pdf
 
 import numpy as np
 from sklearn.neural_network import MLPRegressor
-from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.utils import shuffle
-from itertools import chain
 
 
 class DropInNetworkRegression(MLPRegressor):
