@@ -1,6 +1,4 @@
-import pandas as pd
 import numpy as np
-from sklearn.utils import shuffle
 from sklearn.datasets import make_regression
 
 
@@ -72,7 +70,7 @@ def get_data_set(data_set, n_samples=100, n_features=100, n_informative=10, n_ta
                                coef=coef,
                                random_state=random_state)
         activation = 'logistic'
-        probabilities = [np.random()] * n_features
+        probabilities = np.random.random(n_features)
 
     return X, Y, activation, probabilities
 

@@ -7,6 +7,7 @@ import numpy as np
 from sklearn.neural_network import MLPRegressor
 from sklearn.utils.extmath import safe_sparse_dot
 from sklearn.utils import shuffle
+from itertools import chain
 
 
 class DropInNetworkRegression(MLPRegressor):
@@ -55,7 +56,7 @@ class DropInNetworkRegression(MLPRegressor):
 
         return activations
 
-    def fit_dropin(self, features_fit, labels_fit, np_seed, epochs):
+    def fit_dropin(self, features_fit, labels_fit, np_seed, epochs, sequence_length=None):
         """ Triggers the training of the DropInNetwork.
 
         Parameters
@@ -66,22 +67,37 @@ class DropInNetworkRegression(MLPRegressor):
             Labels for class membership of each sample
         np_seed: integer
              Seed to make numpy randomization reproducible.
-        max_epochs: integer
-            Number of maximum epochs, i.e. number of times the algorithm will be trained with the dataset.
+        epochs: integer
+            Number of maximum epochs, i.e. number of times the algorithm will be trained with the data set.
+        sequence_length: integer
+            In case of sequential data: number of instances grouped into a sequence
         """
         self.train_pass = True
         self.seed = np_seed
         np.random.seed(self.seed)
-        self.epoch_length = len(labels_fit)
+        no_instances = labels_fit.__len__()
 
         features_epochs = np.copy(features_fit)
         labels_epochs = np.copy(labels_fit)
-        c = list(zip(features_fit, labels_fit))
+
+        if sequence_length:
+            features_sequences = np.array([features_fit[0:sequence_length]])
+            labels_sequences = np.array([labels_fit[0:sequence_length]])
+            for i in range(1, (int(no_instances / sequence_length))):
+                features_sequences = np.concatenate((features_sequences, np.array([features_fit[i*sequence_length:(i+1)*sequence_length]])), axis=0)
+                labels_sequences = np.concatenate((labels_sequences, np.array([labels_fit[i*sequence_length:(i+1)*sequence_length]])), axis=0)
+            c = list(zip(features_sequences, labels_sequences))
+        else:
+            c = list(zip(features_fit, labels_fit))
 
         for i in range(1, epochs):
             # create shuffled multiple epoch data set
             shuffled_c = shuffle(c)
             features, labels = zip(*shuffled_c)
+            if sequence_length:
+                features = np.array(features)
+                features = features.reshape(-1, features.shape[-1])
+                labels = np.ravel(np.array(labels))
             features_epochs = np.concatenate((features_epochs, features))
             labels_epochs = np.concatenate((labels_epochs, labels))
         super().fit(features_epochs, labels_epochs)

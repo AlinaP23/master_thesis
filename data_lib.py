@@ -270,7 +270,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
             single_label[i] = 1
             labels.append(single_label)
         data_frame = True
-        probabilities = [np.random()]  * n_features
+        probabilities = np.random.random(n_features)
 
     return X, Y, activation, labels, data_frame, probabilities
 

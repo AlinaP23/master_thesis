@@ -95,11 +95,10 @@ class LearnCommitteeRegression:
 
             # calculate regressor quality
             y_weak_predicted = weak_regressor.predict(x_weak_test[:, feature_selection])
-            # TODO: replace accuracy with regression performance measure
             r_2 = r2_score(y_weak_test, y_weak_predicted)
 
             # if quality above threshold: save, else discard
-            if r_2 > self.threshold:
+            if abs(r_2) < self.threshold:
                 self.universal_regressor_set[k] = weak_regressor
                 k += 1
                 print(k, " weak regressors trained")

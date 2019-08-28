@@ -12,14 +12,14 @@ from sklearn.neural_network import MLPRegressor
 
 # --- PARAMETERS --- #
 # General
-algorithms_to_execute = {"LRP":     True,
+algorithms_to_execute = {"LRP":     False,
                          "Learn++": False,
                          "DropIn":  True,
                          "SelectiveRetraining": False,
                          "Imputation": False,
-                         "Failure_Known": True}
+                         "Failure_Known": False}
 data_set = "sklearn"
-data_set_params = {"n_samples":      50000,
+data_set_params = {"n_samples":      50,
                    "n_features":     15,
                    "n_informative":  9,
                    "n_targets":      1,
@@ -42,7 +42,7 @@ n_nearest_neighbors = 3
 # LRP
 LRP_hidden_layer_sizes = [20, 20, 20]
 LRP_learning_rate_init = 0.1
-LRP_random_states = [7]
+LRP_random_states = [7, 9, 11]
 LRP_seed = 9
 LRP_test_size = 0.1
 LRP_alpha = 2
@@ -64,7 +64,7 @@ learn_no_of_weak_regressors = [5, 6]
 learn_percentage_of_features = [0.2, 0.75]
 learn_missing_data_representation = None
 learn_p_features_standard = None
-learn_p_weak_regressor_threshold = 0.3
+learn_p_weak_regressor_threshold = 0.5
 
 # DropIn
 dropin_hidden_layer_sizes = [30, 30, 30]
@@ -73,6 +73,7 @@ dropin_random_state = 9
 dropin_np_seed = 12
 p_dropin_standard = [0.2, 0.8]
 dropin_epochs = 6
+dropin_seq_length = 5
 
 # Selective Retraining
 sr_hidden_layer_sizes = [30, 30, 30]
@@ -335,7 +336,7 @@ if algorithms_to_execute["DropIn"]:
                                        p_dropin=p_dropin_standard[k],
                                        random_state=dropin_random_state,
                                        activation=activation)
-        dropin_network.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs)
+        dropin_network.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs, sequence_length=dropin_seq_length)
 
         print("Validating Standard DropIn...")
         dropin_predictions.append(dropin_network.predict(x_test))
@@ -352,7 +353,7 @@ if algorithms_to_execute["DropIn"]:
                                            p_dropin=avg_lrp_scores_scaled_inverted,
                                            random_state=dropin_random_state,
                                            activation=activation)
-        dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs)
+        dropin_network_lrp.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs, sequence_length=dropin_seq_length)
 
         # LRP - Range
         print("Training LRP DropIn (range)...")
@@ -361,7 +362,7 @@ if algorithms_to_execute["DropIn"]:
                                              p_dropin=avg_lrp_scores_range_inverted,
                                              random_state=dropin_random_state,
                                              activation=activation)
-        dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs)
+        dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs, sequence_length=dropin_seq_length)
 
     # Validation
     print("Validating LRP DropIn...")
@@ -383,7 +384,7 @@ if algorithms_to_execute["DropIn"]:
                                                      p_dropin=probabilities_inverted,
                                                      random_state=dropin_random_state,
                                                      activation=activation)
-        dropin_network_failure_known.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs)
+        dropin_network_failure_known.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs, sequence_length=dropin_seq_length)
         dropin_predictions_failure_known = dropin_network_failure_known.predict(x_known_test_failures)
         dropin_predictions_failure_known_lrp = dropin_network_lrp.predict(x_known_test_failures)
         dropin_predictions_failure_known_lrp_r = dropin_network_lrp_r.predict(x_known_test_failures)
@@ -449,12 +450,12 @@ if algorithms_to_execute["LRP"]:
 
     print("")
     print("R2 Score - LRP Network: ")
-    print("           w/o Sensor Failure: ", r2_score(lrp_predictions, y_test))
+    print("           w/o Sensor Failure:         ", r2_score(lrp_predictions, y_test))
     for i in range(lrp_predictions_failure.__len__()):
         print("           w/  Sensor Failure (", failure_percentages[i], "): ",
               r2_score(lrp_predictions_failure[i], y_test))
     print("MSE Score - LRP Network: ")
-    print("           w/o Sensor Failure: ", mean_squared_error(lrp_predictions, y_test))
+    print("           w/o Sensor Failure:         ", mean_squared_error(lrp_predictions, y_test))
     for i in range(lrp_predictions_failure.__len__()):
         print("           w/  Sensor Failure (", failure_percentages[i], "): ",
               mean_squared_error(lrp_predictions_failure[i], y_test))
@@ -462,20 +463,20 @@ if algorithms_to_execute["LRP"]:
 if algorithms_to_execute["Imputation"]:
     print("")
     print("MSE - Imputation:")
-    print("          w/o Sensor Failure: ", mean_squared_error(imputation_predictions, y_test))
+    print("          w/o Sensor Failure:            ", mean_squared_error(imputation_predictions, y_test))
     for i in range(median_imputation_predictions_failure.__len__()):
         print("          w/  Median Imputation (", failure_percentages[i], "): ",
               mean_squared_error(median_imputation_predictions_failure[i], y_test))
     for i in range(mean_imputation_predictions_failure.__len__()):
-        print("          w/  Mean Imputation (", failure_percentages[i], "): ",
+        print("          w/  Mean Imputation   (", failure_percentages[i], "): ",
               mean_squared_error(mean_imputation_predictions_failure[i], y_test))
     for i in range(knn_imputation_predictions_failure.__len__()):
-        print("          w/  kNN Imputation (", failure_percentages[i], "): ",
+        print("          w/  kNN Imputation    (", failure_percentages[i], "): ",
               mean_squared_error(knn_imputation_predictions_failure[i], y_test))
     if algorithms_to_execute["Failure_Known"]:
         print("          w/  Median Imputation & w/ Failure Known: ", mean_squared_error(median_pred_failure_known, y_test))
-        print("          w/  Mean Imputation & w/ Failure Known: ", mean_squared_error(mean_pred_failure_known, y_test))
-        print("          w/  kNN Imputation & w/ Failure Known: ", mean_squared_error(knn_pred_failure_known, y_test))
+        print("          w/  Mean Imputation & w/ Failure Known:   ", mean_squared_error(mean_pred_failure_known, y_test))
+        print("          w/  kNN Imputation & w/ Failure Known:    ", mean_squared_error(knn_pred_failure_known, y_test))
 
 if algorithms_to_execute["Learn++"]:
     print("")
@@ -484,25 +485,28 @@ if algorithms_to_execute["Learn++"]:
         print("Number of weak regressors: ", learn_no_of_weak_regressors[w])
         for pof in range(learn_percentage_of_features.__len__()):
             print("Percentage of features: ", learn_percentage_of_features[pof])
-            print("w/o LRP  & w/o Sensor Failure: ", mean_squared_error(learn_predictions[w][pof], y_test))
+            print("w/o LRP  & w/o Sensor Failure:           ",
+                  mean_squared_error(learn_predictions[w][pof], y_test))
             for i in range(learn_predictions_failure_set[w][pof].__len__()):
-                print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
+                print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "):   ",
                       mean_squared_error(learn_predictions_failure_set[w][pof][i], y_test))
             if algorithms_to_execute["LRP"]:
-                print("w/ LRP   & w/o Sensor Failure: ", mean_squared_error(learn_predictions_lrp[w][pof], y_test))
+                print("w/ LRP   & w/o Sensor Failure:           ",
+                      mean_squared_error(learn_predictions_lrp[w][pof], y_test))
                 for i in range(learn_predictions_failure_lrp_set[w][pof].__len__()):
-                    print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ",
+                    print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "):    ",
                           mean_squared_error(learn_predictions_failure_lrp_set[w][pof][i], y_test))
-                print("w/ LRPinv   & w/o Sensor Failure: ", mean_squared_error(learn_predictions_lrp[w][pof], y_test))
+                print("w/ LRPinv   & w/o Sensor Failure:        ",
+                      mean_squared_error(learn_predictions_lrp[w][pof], y_test))
                 for i in range(learn_predictions_failure_lrp_inverted_set[w][pof].__len__()):
                     print("w/ LRPinv   & w/  Sensor Failure(", failure_percentages[i], "): ",
                           mean_squared_error(learn_predictions_failure_lrp_inverted_set[w][pof][i], y_test))
             if algorithms_to_execute["Failure_Known"]:
-                print("w/ Failure Known: ",
+                print("w/ Failure Known:                        ",
                       mean_squared_error(learn_predictions_known[w][pof], y_test))
-                print("w/ Failure Known & w/ LRP: ",
+                print("w/ Failure Known & w/ LRP:               ",
                       mean_squared_error(learn_predictions_known_lrp[w][pof], y_test))
-                print("w/ Failure Known & w/ LRPinv: ",
+                print("w/ Failure Known & w/ LRPinv:            ",
                       mean_squared_error(learn_predictions_known_lrp_inverted[w][pof], y_test))
                 print("w/ Failure Known & w/ Standard Training: ",
                       mean_squared_error(learn_predictions_known_standard[w][pof], y_test))
@@ -512,24 +516,27 @@ if algorithms_to_execute["DropIn"]:
     print("MSE - DropIn:")
     for k in range(p_dropin_standard.__len__()):
         print("DropIn Prob.:", p_dropin_standard[k])
-        print("w/o LRP  & w/o Sensor Failure: ",mean_squared_error(dropin_predictions[k], y_test))
+        print("w/o LRP  & w/o Sensor Failure:         ",mean_squared_error(dropin_predictions[k], y_test))
         for i in range(dropin_predictions_failure_set[k].__len__()):
             print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
                   mean_squared_error(dropin_predictions_failure_set[k][i], y_test))
     if algorithms_to_execute["LRP"]:
-        print("w/  LRP  & w/o Sensor Failure: ", mean_squared_error(dropin_predictions_lrp, y_test))
+        print("w/  LRP  & w/o Sensor Failure:         ", mean_squared_error(dropin_predictions_lrp, y_test))
         for i in range(dropin_predictions_failure_lrp.__len__()):
             print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
                   mean_squared_error(dropin_predictions_failure_lrp[i], y_test))
-        print("w/  LRPr & w/o Sensor Failure: ", mean_squared_error(dropin_predictions_lrp_r, y_test))
+        print("w/  LRPr & w/o Sensor Failure:         ", mean_squared_error(dropin_predictions_lrp_r, y_test))
         for i in range(dropin_predictions_failure_lrp_r.__len__()):
             print("w/  LRPr & w/  Sensor Failure (", failure_percentages[i], "): ",
                   mean_squared_error(dropin_predictions_failure_lrp_r[i], y_test))
     if algorithms_to_execute["Failure_Known"]:
-        print("w/ Failure Known: ", mean_squared_error(dropin_predictions_failure_known, y_test))
-        print("w/ Failure Known & w/ LRP: ", mean_squared_error(dropin_predictions_failure_known_lrp, y_test))
-        print("w/ Failure Known & w/ LRPr: ", mean_squared_error(dropin_predictions_failure_known_lrp_r, y_test))
-        print("w/ Failure Known & w/ Standard Training: ",
+        print("w/ Failure Known:                       ",
+              mean_squared_error(dropin_predictions_failure_known, y_test))
+        print("w/ Failure Known & w/ LRP:              ",
+              mean_squared_error(dropin_predictions_failure_known_lrp, y_test))
+        print("w/ Failure Known & w/ LRPr:             ",
+              mean_squared_error(dropin_predictions_failure_known_lrp_r, y_test))
+        print("w/ Failure Known & w/ Standard Training:",
               mean_squared_error(dropin_predictions_failure_known_standard, y_test))
 
 if algorithms_to_execute["SelectiveRetraining"]:
@@ -537,17 +544,17 @@ if algorithms_to_execute["SelectiveRetraining"]:
     for j in range(sr_weight_threshold.__len__()):
         print("MSE - Selective Retraining (Weight Threshold: ", sr_weight_threshold[j], "):")
         print("MSE - Without Retraining: ")
-        print("           w/o Sensor Failure: ", mean_squared_error(sr_original_predictions[j], y_test))
+        print("           w/o Sensor Failure:         ", mean_squared_error(sr_original_predictions[j], y_test))
         for i in range(sr_original_predictions_failure_set[j].__len__()):
-            print("           w/  Sensor Failure", failure_percentages[i], ": ",
+            print("           w/  Sensor Failure (", failure_percentages[i], "): ",
                   mean_squared_error(sr_original_predictions_failure_set[j][i], y_test))
         print("MSE - Selective Retraining: ")
-        print("w/o LRP  & w/o Sensor Failure: ", mean_squared_error(sr_predictions[j], y_test))
+        print("w/o LRP  & w/o Sensor Failure:         ", mean_squared_error(sr_predictions[j], y_test))
         for i in range(sr_predictions_failure_set[j].__len__()):
-            print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], ": ",
+            print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
                   mean_squared_error(sr_predictions_failure_set[j][i], y_test))
         if algorithms_to_execute["LRP"]:
-            print("w/  LRP  & w/o Sensor Failure: ", mean_squared_error(sr_predictions_lrp[j], y_test))
+            print("w/  LRP  & w/o Sensor Failure:         ", mean_squared_error(sr_predictions_lrp[j], y_test))
             for i in range(sr_predictions_failure_lrp_set[j].__len__()):
                 print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
                       mean_squared_error(sr_predictions_failure_lrp_set[j][i], y_test))
