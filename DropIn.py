@@ -114,7 +114,6 @@ class DropInNetwork(MLPClassifier):
         """
         self.train_pass = True
         self.seed = np_seed
-        self.sequence_length = sequence_length
         np.random.seed(self.seed)
         no_instances = labels_fit.__len__()
 
@@ -122,14 +121,15 @@ class DropInNetwork(MLPClassifier):
         labels_epochs = np.copy(labels_fit)
 
         if sequence_length:
-            features_sequences = np.array([features_fit[0:sequence_length]])
-            labels_sequences = np.array([labels_fit[0:sequence_length]])
-            for i in range(1, (int(no_instances / sequence_length))):
+            self.sequence_length = sequence_length
+            features_sequences = np.array([features_fit[0:self.sequence_length]])
+            labels_sequences = np.array([labels_fit[0:self.sequence_length]])
+            for i in range(1, (int(no_instances / self.sequence_length))):
                 features_sequences = np.concatenate(
-                    (features_sequences, np.array([features_fit[i * sequence_length:(i + 1) * sequence_length]])),
+                    (features_sequences, np.array([features_fit[i * self.sequence_length:(i + 1) * self.sequence_length]])),
                     axis=0)
                 labels_sequences = np.concatenate(
-                    (labels_sequences, np.array([labels_fit[i * sequence_length:(i + 1) * sequence_length]])), axis=0)
+                    (labels_sequences, np.array([labels_fit[i * self.sequence_length:(i + 1) * self.sequence_length]])), axis=0)
             c = list(zip(features_sequences, labels_sequences))
         else:
             c = list(zip(features_fit, labels_fit))

@@ -12,11 +12,11 @@ from sklearn.neural_network import MLPClassifier
 # General
 algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
-                         "DropIn":  False,
-                         "SelectiveRetraining": False,
-                         "Imputation": False,
+                         "DropIn":  True,
+                         "SelectiveRetraining": True,
+                         "Imputation": True,
                          "Failure_Known": True}
-data_set = "OCR"
+data_set = "ION"
 data_set_params = {"n_samples":     5000,
                    "n_features":    15,
                    "n_informative": 15,
@@ -42,7 +42,7 @@ multi_sensor_failure = True
 n_nearest_neighbors = 3
 
 # LRP
-LRP_hidden_layer_sizes = [70, 70, 70]
+LRP_hidden_layer_sizes = [45, 45, 45]
 LRP_learning_rate_init = 0.1
 LRP_random_states = [7]
 LRP_seed = 9
@@ -53,23 +53,23 @@ LRP_dropout_threshold_max = 0.4
 LRP_dropout_threshold_min = 0.1
 
 # Imputation
-imputation_hidden_layer_sizes = [70, 70, 70]
+imputation_hidden_layer_sizes = [45, 45, 45]
 imputation_learning_rate_init = 0.1
 imputation_random_state = 3
 
 # Learn++
-learn_hidden_layer_sizes = [50, 50, 50]
+learn_hidden_layer_sizes = [20, 20, 20]
 learn_learning_rate_init = 0.1
 learn_random_state = 5
 learn_np_seed = 7
-learn_no_of_weak_classifiers = [30, 50, 70]
-learn_percentage_of_features = [0.15, 0.2, 0.3, 0.4, 0.6, 1]
+learn_no_of_weak_classifiers = [50, 70, 120]
+learn_percentage_of_features = [0.1, 0.15, 0.2, 0.4, 0.6]
 learn_missing_data_representation = None
 learn_p_features_standard = None
-learn_p_weak_classifier_threshold = 0.3
+learn_p_weak_classifier_threshold = 0.5
 
 # DropIn
-dropin_hidden_layer_sizes = [70, 70, 70]
+dropin_hidden_layer_sizes = [45, 45, 45]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 9
 dropin_np_seed = 8
@@ -77,7 +77,7 @@ p_dropin_standard = [0.2, 0.35, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
 dropin_epochs = 25
 
 # Selective Retraining
-sr_hidden_layer_sizes = [70, 70, 70]
+sr_hidden_layer_sizes = [45, 45, 45]
 sr_learning_rate_init = 0.1
 sr_random_state = 7
 sr_weight_threshold = [0.1, 0.25, 0.3, 0.5, 0.75]

@@ -70,7 +70,6 @@ class DropInNetworkRegression(MLPRegressor):
         """
         self.train_pass = True
         self.seed = np_seed
-        self.sequence_length = sequence_length
         np.random.seed(self.seed)
         no_instances = labels_fit.__len__()
 
@@ -78,6 +77,7 @@ class DropInNetworkRegression(MLPRegressor):
         labels_epochs = np.copy(labels_fit)
 
         if sequence_length:
+            self.sequence_length = sequence_length
             features_sequences = np.array([features_fit[0:sequence_length]])
             labels_sequences = np.array([labels_fit[0:sequence_length]])
             for i in range(1, (int(no_instances / sequence_length))):

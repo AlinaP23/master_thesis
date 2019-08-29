@@ -235,6 +235,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'relu'
         labels = ["g", "b"]
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "MFEAT":
         # https://archive.ics.uci.edu/ml/datasets/Multiple+Features
