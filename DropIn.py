@@ -132,7 +132,7 @@ class DropInNetwork(MLPClassifier):
                     (labels_sequences, np.array([labels_fit[i * self.sequence_length:(i + 1) * self.sequence_length]])), axis=0)
             c = list(zip(features_sequences, labels_sequences))
         else:
-            c = list(zip(features_fit, labels_fit))
+            c = list(zip(features_fit, np.array(labels_fit)))
 
         for i in range(1, epochs):
             # create shuffled multiple epoch data set
@@ -141,7 +141,8 @@ class DropInNetwork(MLPClassifier):
             if sequence_length:
                 features = np.array(features)
                 features = features.reshape(-1, features.shape[-1])
-                labels = np.ravel(np.array(labels))
+                labels = np.array(labels)
+                labels = labels.reshape(-1, labels.shape[-1])
             features_epochs = np.concatenate((features_epochs, features))
             labels_epochs = np.concatenate((labels_epochs, labels))
         super().fit(features_epochs, labels_epochs)

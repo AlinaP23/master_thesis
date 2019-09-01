@@ -16,14 +16,14 @@ algorithms_to_execute = {"LRP":     True,
                          "SelectiveRetraining": True,
                          "Imputation": True,
                          "Failure_Known": True}
-data_set = "ION"
+data_set = "sklearn"
 data_set_params = {"n_samples":     5000,
                    "n_features":    15,
-                   "n_informative": 15,
+                   "n_informative": 10,
                    "n_redundant":   0,
-                   "n_repeated":    0,
+                   "n_repeated":    5,
                    "n_classes":     2,
-                   "n_clusters_per_class":  2,
+                   "n_clusters_per_class":  1,
                    "weights":       None,
                    "flip_y":        0.01,
                    "class_sep":     1.0,
@@ -36,7 +36,7 @@ data_set_params = {"n_samples":     5000,
 ms_random_state = 9
 ms_test_size = 0.3
 failure_simulation_np_seed = 7
-failure_percentages = [0.10, 0.2, 0.25, 0.3, 0.40, 0.55, 0.6, 0.70, 0.80]
+failure_percentages = [0.10, 0.25, 0.5, 0.75, 0.90]
 random_failure = False
 multi_sensor_failure = True
 n_nearest_neighbors = 3
@@ -62,18 +62,18 @@ learn_hidden_layer_sizes = [20, 20, 20]
 learn_learning_rate_init = 0.1
 learn_random_state = 5
 learn_np_seed = 7
-learn_no_of_weak_classifiers = [50, 70, 120]
-learn_percentage_of_features = [0.1, 0.15, 0.2, 0.4, 0.6]
+learn_no_of_weak_classifiers = [50, 70]
+learn_percentage_of_features = [0.15, 0.2, 0.4, 0.6]
 learn_missing_data_representation = None
 learn_p_features_standard = None
-learn_p_weak_classifier_threshold = 0.5
+learn_p_weak_classifier_threshold = 0.2
 
 # DropIn
 dropin_hidden_layer_sizes = [45, 45, 45]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 9
 dropin_np_seed = 8
-p_dropin_standard = [0.2, 0.35, 0.5, 0.6, 0.7, 0.8, 0.9, 1]
+p_dropin_standard = [0.2, 0.35, 0.5, 0.75, 0.9]
 dropin_epochs = 25
 
 # Selective Retraining
@@ -503,7 +503,8 @@ if algorithms_to_execute["Learn++"]:
                 for i in range(learn_predictions_failure_lrp_set[w][pof].__len__()):
                     print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ",
                           accuracy_score(learn_predictions_failure_lrp_set[w][pof][i], y_test))
-                print("w/ LRPinv   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp[w][pof], y_test))
+                print("w/ LRPinv   & w/o Sensor Failure: ",
+                      accuracy_score(learn_predictions_lrp_inverted[w][pof], y_test))
                 for i in range(learn_predictions_failure_lrp_inverted_set[w][pof].__len__()):
                     print("w/ LRPinv   & w/  Sensor Failure(", failure_percentages[i], "): ",
                           accuracy_score(learn_predictions_failure_lrp_inverted_set[w][pof][i], y_test))
