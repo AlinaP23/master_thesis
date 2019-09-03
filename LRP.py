@@ -168,7 +168,8 @@ class LRPNetwork:
             for j in range(0, len(y_test)):
                 print("LRP Calculation ", j, " of ", len(y_test))
                 self.LRP_scores_regarded += 1
-                if ((isinstance(y_test[j], list) or isinstance(y_test[j], np.ndarray)) and y_test[j].all() == predictions[j].all()) or y_test[j] == predictions[j]:
+                if ((isinstance(y_test[j], list) or isinstance(y_test[j], np.ndarray))
+                        and y_test[j].all() == predictions[j].all()) or y_test[j] == predictions[j]:
                     lrp_iterations += 1
                     feature_lrp_scores = self.lrp_scores(mlp_network, [x_test[j]], alpha, alpha - 1)
                     avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, feature_lrp_scores)]
@@ -309,6 +310,7 @@ class LRPNetwork:
         max_score = max(average_lrp_scores)
         average_lrp_scores_scaled = [x / max_score * threshold_max for x in average_lrp_scores]
         average_lrp_scores_scaled_inverted = [1 - x for x in average_lrp_scores_scaled]
+
         return average_lrp_scores_scaled, average_lrp_scores_scaled_inverted
 
     @staticmethod
@@ -341,4 +343,5 @@ class LRPNetwork:
         average_lrp_scores_range = \
             [(x - min_score) / lrp_range * threshold_range + threshold_min for x in average_lrp_scores]
         average_lrp_scores_range_inverted = [1 - x for x in average_lrp_scores_range]
+
         return average_lrp_scores_range, average_lrp_scores_range_inverted

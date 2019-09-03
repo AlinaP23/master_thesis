@@ -49,6 +49,8 @@ def get_data_set(data_set, n_samples=100, n_features=100, n_informative=10, n_ta
         The coefficient of the underlying linear model. It is returned only if coef is True.
     activation: String
         Activation function to be used in a neural network when predicting the target values.
+    probabilities: array
+        Sensor failure probability for each individual attribute
     """
     data_frame = False
     activation = 'logistic'

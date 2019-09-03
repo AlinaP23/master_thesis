@@ -1,8 +1,3 @@
-"""
-Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
-DropIn: https://arxiv.org/pdf/1705.02643.pdf
-"""
-
 import numpy as np
 from sklearn.neural_network import MLPClassifier
 from sklearn.utils.extmath import safe_sparse_dot
@@ -47,7 +42,7 @@ class DropInNetwork(MLPClassifier):
                     if type(self.p_dropin) is list:
                         dropout_array = np.random.binomial(1, self.p_dropin)
                     else:
-                        dropout_array= np.random.binomial(1, self.p_dropin, size=activations[0][j].shape)
+                        dropout_array = np.random.binomial(1, self.p_dropin, size=activations[0][j].shape)
                 self.dropout_arrays[j] = dropout_array
                 activations[0][j] = activations[0][j] * self.dropout_arrays[j]
         super()._forward_pass(activations)
@@ -121,15 +116,18 @@ class DropInNetwork(MLPClassifier):
         labels_epochs = np.copy(labels_fit)
 
         if sequence_length:
+            # divide data set into sequences of specified length
             self.sequence_length = sequence_length
             features_sequences = np.array([features_fit[0:self.sequence_length]])
             labels_sequences = np.array([labels_fit[0:self.sequence_length]])
             for i in range(1, (int(no_instances / self.sequence_length))):
                 features_sequences = np.concatenate(
-                    (features_sequences, np.array([features_fit[i * self.sequence_length:(i + 1) * self.sequence_length]])),
+                    (features_sequences,
+                     np.array([features_fit[i * self.sequence_length:(i + 1) * self.sequence_length]])),
                     axis=0)
                 labels_sequences = np.concatenate(
-                    (labels_sequences, np.array([labels_fit[i * self.sequence_length:(i + 1) * self.sequence_length]])), axis=0)
+                    (labels_sequences,
+                     np.array([labels_fit[i * self.sequence_length:(i + 1) * self.sequence_length]])), axis=0)
             c = list(zip(features_sequences, labels_sequences))
         else:
             c = list(zip(features_fit, np.array(labels_fit)))

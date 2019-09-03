@@ -26,7 +26,7 @@ data_set_params = {"n_samples":      5000,
                    "bias":           0.0,
                    "effective_rank": None,
                    "tail_strength":  0.5,
-                   "noise":          0.0,
+                   "noise":          0.3,
                    "data_shuffle":   True,
                    "coef":           False,
                    "random_state":   7}
@@ -364,16 +364,16 @@ if algorithms_to_execute["DropIn"]:
                                              activation=activation)
         dropin_network_lrp_r.fit_dropin(x_train, y_train, dropin_np_seed, dropin_epochs, sequence_length=dropin_seq_length)
 
-    # Validation
-    print("Validating LRP DropIn...")
-    dropin_predictions_lrp = dropin_network_lrp.predict(x_test)
-    dropin_predictions_failure_lrp = []
-    for dropin_failure_test_lrp in x_test_failures:
-        dropin_predictions_failure_lrp.append(dropin_network_lrp.predict(dropin_failure_test_lrp))
-    dropin_predictions_lrp_r = dropin_network_lrp_r.predict(x_test)
-    dropin_predictions_failure_lrp_r = []
-    for dropin_failure_test_lrp_r in x_test_failures:
-        dropin_predictions_failure_lrp_r.append(dropin_network_lrp.predict(dropin_failure_test_lrp_r))
+        # Validation
+        print("Validating LRP DropIn...")
+        dropin_predictions_lrp = dropin_network_lrp.predict(x_test)
+        dropin_predictions_failure_lrp = []
+        for dropin_failure_test_lrp in x_test_failures:
+            dropin_predictions_failure_lrp.append(dropin_network_lrp.predict(dropin_failure_test_lrp))
+        dropin_predictions_lrp_r = dropin_network_lrp_r.predict(x_test)
+        dropin_predictions_failure_lrp_r = []
+        for dropin_failure_test_lrp_r in x_test_failures:
+            dropin_predictions_failure_lrp_r.append(dropin_network_lrp.predict(dropin_failure_test_lrp_r))
 
     if algorithms_to_execute["Failure_Known"]:
         # Failure known

@@ -71,6 +71,8 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         List of the unique labels of the data set
     data_frame: Boolean
         Indicates whether the labels of the data set are represented in binary format
+    probabilities: array
+        Sensor failure probability for each individual attribute
     """
     data_frame = False
     activation = 'logistic'
@@ -91,6 +93,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         activation = 'relu'
         labels = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
         data_frame = True
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "bank":
         bank = pd.read_csv('./data/bank_data_balanced.csv', delimiter=";")
@@ -105,6 +108,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         activation = 'logistic'
         labels = [[1, 0], [0, 1]]
         data_frame = True
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "income":
         # https://archive.ics.uci.edu/ml/datasets/Adult
@@ -122,6 +126,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [0, 1]
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "income_balanced":
         # https://archive.ics.uci.edu/ml/datasets/Adult
@@ -142,6 +147,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         activation = 'logistic'
         labels = [[1, 0], [0, 1]]
         data_frame = True
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "PAMAP2":
         # https://archive.ics.uci.edu/ml/datasets/PAMAP2+Physical+Activity+Monitoring
@@ -171,6 +177,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = "logistic"
         labels = [0, 1, 2, 3]
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "gas_sensor_array_drift":
         # https://archive.ics.uci.edu/ml/datasets/Gas+Sensor+Array+Drift+Dataset+at+Different+Concentrations
@@ -190,6 +197,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [1, 2, 3, 4, 5, 6]
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "Wine":
         # https://archive.ics.uci.edu/ml/datasets/Wine
@@ -200,9 +208,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [1, 2, 3]
-        probabilities = [0.1, 0.0, 0.2, 0.2, 0.3,
-                         0.5, 0.8, 0.1, 0.1, 0.1,
-                         0.1, 0.1, 0.0]
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "WBC":
         # https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
@@ -213,6 +219,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = ["M", "B"]
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "OCR":
         # https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits
@@ -224,7 +231,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
         activation = 'logistic'
         labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        probabilities = np.random.rand(62)
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "ION":
         # https://archive.ics.uci.edu/ml/datasets/ionosphere
@@ -233,19 +240,20 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         X = sensor_data.iloc[:, :33].values
         Y = sensor_data.iloc[:, 34].values
 
-        activation = 'relu'
+        activation = 'logistic'
         labels = ["g", "b"]
         probabilities = np.random.random(len(X[0]))
 
     elif data_set == "MFEAT":
         # https://archive.ics.uci.edu/ml/datasets/Multiple+Features
-        sensor_data = pd.read_csv('./data/MFEAT/mfeat-fac', delimiter=" ", header=None)
+        sensor_data = pd.read_csv('./data/MFEAT/mfeat-fac', delim_whitespace=True, header=None)
 
         X = sensor_data.values
-        Y = [200*[0], 200*[1], 200*[2], 200*[3], 200*[4], 200*[5], 200*[6], 200*[7], 200*[8], 200*[9]]
-
-        activation = 'relu'
+        Y = np.array([200*[0], 200*[1], 200*[2], 200*[3], 200*[4], 200*[5], 200*[6], 200*[7], 200*[8], 200*[9]])
+        Y = Y.flatten()
+        activation = 'logistic'
         labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+        probabilities = np.random.random(len(X[0]))
 
     elif data_set == "sklearn":
         X, Y = make_classification(n_samples=n_samples,

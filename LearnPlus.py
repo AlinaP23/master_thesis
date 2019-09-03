@@ -1,7 +1,3 @@
-"""
-Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
-Learn++: https://www.researchgate.net/profile/Robi_Polikar/publication/4030043_An_Ensemble_of_Classifiers_Approach_for_the_Missing_Feature_Problem/links/004635182ebc2c7955000000/An-Ensemble-of-Classifiers-Approach-for-the-Missing-Feature-Problem.pdf
-"""
 import numpy as np
 import pandas as pd
 from sklearn.neural_network import MLPClassifier
@@ -46,7 +42,7 @@ class LearnCommittee:
         self.labels = labels
         self.universal_classifier_set = [None]*no_of_weak_classifiers
 
-        # initialize prob. of features to be chosen for weak classifier
+        # initialize probability of features to be chosen for weak classifier
         if p_features is not None:
             self.p_features = np.copy(p_features)
         else:

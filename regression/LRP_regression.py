@@ -97,8 +97,8 @@ class LRPNetworkRegression:
         for i in range(0, iterations):
             print("Iteration:", i + 1)
             single_network_results, single_networks[i], performances[i] = \
-                self.single_network_avg_lrp_score_per_feature(features, target_values, test_size, seed, random_states[i],
-                                                              alpha, threshold)
+                self.single_network_avg_lrp_score_per_feature(features, target_values, test_size, seed,
+                                                              random_states[i], alpha, threshold)
             if single_network_results is not None:
                 avg_feature_lrp_scores = [x + y for x, y in zip(avg_feature_lrp_scores, single_network_results)]
                 network_results += 1
@@ -315,6 +315,7 @@ class LRPNetworkRegression:
         max_score = max(average_lrp_scores)
         average_lrp_scores_scaled = [x / max_score * threshold_max for x in average_lrp_scores]
         average_lrp_scores_scaled_inverted = [1 - x for x in average_lrp_scores_scaled]
+
         return average_lrp_scores_scaled, average_lrp_scores_scaled_inverted
 
     @staticmethod
@@ -347,4 +348,5 @@ class LRPNetworkRegression:
         average_lrp_scores_range = \
             [(x - min_score) / lrp_range * threshold_range + threshold_min for x in average_lrp_scores]
         average_lrp_scores_range_inverted = [1 - x for x in average_lrp_scores_range]
+
         return average_lrp_scores_range, average_lrp_scores_range_inverted

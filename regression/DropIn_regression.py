@@ -1,8 +1,3 @@
-"""
-Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
-DropIn: https://arxiv.org/pdf/1705.02643.pdf
-"""
-
 import numpy as np
 from sklearn.neural_network import MLPRegressor
 from sklearn.utils import shuffle
@@ -77,12 +72,17 @@ class DropInNetworkRegression(MLPRegressor):
         labels_epochs = np.copy(labels_fit)
 
         if sequence_length:
+            # divide data set into sequences of specified length
             self.sequence_length = sequence_length
             features_sequences = np.array([features_fit[0:sequence_length]])
             labels_sequences = np.array([labels_fit[0:sequence_length]])
             for i in range(1, (int(no_instances / sequence_length))):
-                features_sequences = np.concatenate((features_sequences, np.array([features_fit[i*sequence_length:(i+1)*sequence_length]])), axis=0)
-                labels_sequences = np.concatenate((labels_sequences, np.array([labels_fit[i*sequence_length:(i+1)*sequence_length]])), axis=0)
+                features_sequences = np.concatenate((features_sequences,
+                                                     np.array([features_fit[i*sequence_length:(i+1)*sequence_length]])),
+                                                    axis=0)
+                labels_sequences = np.concatenate((labels_sequences,
+                                                   np.array([labels_fit[i*sequence_length:(i+1)*sequence_length]])),
+                                                  axis=0)
             c = list(zip(features_sequences, labels_sequences))
         else:
             c = list(zip(features_fit, labels_fit))

@@ -1,9 +1,4 @@
-"""
-Source: https://www.python-course.eu/neural_networks_with_python_numpy.php
-Learn++: https://www.researchgate.net/profile/Robi_Polikar/publication/4030043_An_Ensemble_of_Classifiers_Approach_for_the_Missing_Feature_Problem/links/004635182ebc2c7955000000/An-Ensemble-of-Classifiers-Approach-for-the-Missing-Feature-Problem.pdf
-"""
 import numpy as np
-import pandas as pd
 from sklearn.neural_network import MLPRegressor
 from sklearn import model_selection
 from sklearn.metrics import r2_score
@@ -161,4 +156,3 @@ class LearnCommitteeRegression:
         avg_result = summed_up_results[0] / len(usable_regressor_set)
 
         return avg_result
-
