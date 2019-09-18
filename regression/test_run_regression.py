@@ -14,11 +14,11 @@ from sklearn.neural_network import MLPRegressor
 # General
 algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
-                         "DropIn":  True,
-                         "SelectiveRetraining": True,
-                         "Imputation": True,
+                         "DropIn":  False,
+                         "SelectiveRetraining": False,
+                         "Imputation": False,
                          "Failure_Known": True}
-data_set = "sklearn"
+data_set = "energy_efficiency"
 data_set_params = {"n_samples":      5000,
                    "n_features":     15,
                    "n_informative":  15,
@@ -34,52 +34,52 @@ data_set_params = {"n_samples":      5000,
 ms_random_state = 9
 ms_test_size = 0.1
 failure_simulation_np_seed = 7
-failure_percentages = [0.10, 0.25, 0.5, 0.75, 0.90]
+failure_percentages = [0.10, 0.25, 0.35, 0.5, 0.75, 0.90]
 random_failure = False
 multi_sensor_failure = True
 n_nearest_neighbors = 3
 
 # LRP
-LRP_hidden_layer_sizes = [45, 45, 45]
+LRP_hidden_layer_sizes = [10, 9, 8]#[100, 70, 50]
 LRP_learning_rate_init = 0.1
-LRP_random_states = [7]
-LRP_seed = 9
+LRP_random_states = [3]
+LRP_seed = 3
 LRP_test_size = 0.1
 LRP_alpha = 2
-LRP_r2_threshold = 0.3
-LRP_dropout_threshold_max = 0.4
+LRP_r2_threshold = 0.0005
+LRP_dropout_threshold_max = 0.6
 LRP_dropout_threshold_min = 0.1
 
 # Imputation
-imputation_hidden_layer_sizes = [45, 45, 45]
+imputation_hidden_layer_sizes = [10, 9, 8]
 imputation_learning_rate_init = 0.1
 imputation_random_state = 3
 
 # Learn++
-learn_hidden_layer_sizes = [20, 20, 20]
+learn_hidden_layer_sizes = [10, 9, 8]
 learn_learning_rate_init = 0.1
-learn_random_state = 5
-learn_np_seed = 7
-learn_no_of_weak_regressors = [50, 70]
-learn_percentage_of_features = [0.15, 0.2, 0.4, 0.6]
+learn_random_state = 3
+learn_np_seed = 3
+learn_no_of_weak_regressors = [80]
+learn_percentage_of_features = [0.15, 0.2, 0.3, 0.4, 0.6, 0.8]
 learn_missing_data_representation = None
 learn_p_features_standard = None
-learn_p_weak_regressor_threshold = 0.8
+learn_p_weak_regressor_threshold = 0.3
 
 # DropIn
-dropin_hidden_layer_sizes = [30, 30, 30]
+dropin_hidden_layer_sizes = [10, 9, 8] #[60, 60, 60]
 dropin_learning_rate_init = 0.1
-dropin_random_state = 9
-dropin_np_seed = 12
-p_dropin_standard = [0.2, 0.8]
-dropin_epochs = 6
-dropin_seq_length = 5
+dropin_random_state = 3
+dropin_np_seed = 3
+p_dropin_standard = [0.1, 0.2, 0.35, 0.5, 0.75, 0.8, 0.9, 0.95]
+dropin_epochs = 20
+dropin_seq_length = 1
 
 # Selective Retraining
-sr_hidden_layer_sizes = [45, 45, 45]
+sr_hidden_layer_sizes = [10, 9, 8]#[10, 9, 8]
 sr_learning_rate_init = 0.1
-sr_random_state = 7
-sr_weight_threshold = [0.1, 0.25, 0.3, 0.5, 0.75]
+sr_random_state = 3
+sr_weight_threshold = [0.1, 0.3, 0.75]
 
 # --- Data Preparation --- #
 X, Y, activation, probabilities = \

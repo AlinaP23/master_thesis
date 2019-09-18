@@ -56,7 +56,10 @@ class LRPNetwork:
         self.hidden_layer_sizes = hidden_layer_sizes
         self.learning_rate_init = learning_rate_init
         self.no_of_in_nodes = no_of_in_nodes
-        self.activation = activation
+        if activation != "relu":
+            self.activation = activation
+        else:
+            self.activation = "logistic"
         self.LRP_scores_regarded = 0
 
     def avg_lrp_score_per_feature(self, features, labels, test_size, seed, random_states, alpha, accuracy_threshold):
@@ -278,12 +281,17 @@ class LRPNetwork:
         """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         sum_lrp_scores = sum(average_lrp_scores)
-        average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in average_lrp_scores]
 
-        average_lrp_scores_normalized_inverted = [sum_lrp_scores - x for x in average_lrp_scores]
-        sum_lrp_scores_inverted = sum(average_lrp_scores_normalized_inverted)
-        average_lrp_scores_normalized_inverted = \
-            [round(x / sum_lrp_scores_inverted, 5) for x in average_lrp_scores_normalized_inverted]
+        if sum_lrp_scores > 0:
+            average_lrp_scores_normalized = [round(x / sum_lrp_scores, 5) for x in average_lrp_scores]
+            average_lrp_scores_normalized_inverted = [sum_lrp_scores - x for x in average_lrp_scores]
+            sum_lrp_scores_inverted = sum(average_lrp_scores_normalized_inverted)
+            average_lrp_scores_normalized_inverted = \
+                [round(x / sum_lrp_scores_inverted, 5) for x in average_lrp_scores_normalized_inverted]
+        else:
+            average_lrp_scores_normalized_inverted = [0 for x in average_lrp_scores]
+            average_lrp_scores_normalized = [0 for x in average_lrp_scores]
+            print("LRP calculation did not yield useful values. Consider adjusting the LRP threshold.")
 
         return average_lrp_scores_normalized, average_lrp_scores_normalized_inverted
 
@@ -308,8 +316,13 @@ class LRPNetwork:
         """
         average_lrp_scores = [abs(x) for x in average_lrp_scores]
         max_score = max(average_lrp_scores)
-        average_lrp_scores_scaled = [x / max_score * threshold_max for x in average_lrp_scores]
-        average_lrp_scores_scaled_inverted = [1 - x for x in average_lrp_scores_scaled]
+        if max_score > 0:
+            average_lrp_scores_scaled = [x / max_score * threshold_max for x in average_lrp_scores]
+            average_lrp_scores_scaled_inverted = [1 - x for x in average_lrp_scores_scaled]
+        else:
+            average_lrp_scores_scaled = [0 for x in average_lrp_scores]
+            average_lrp_scores_scaled_inverted = [0 for x in average_lrp_scores]
+            print("LRP calculation did not yield useful values. Consider adjusting the LRP threshold.")
 
         return average_lrp_scores_scaled, average_lrp_scores_scaled_inverted
 
@@ -340,8 +353,13 @@ class LRPNetwork:
         min_score = min(average_lrp_scores)
         lrp_range = max_score - min_score
         threshold_range = threshold_max - threshold_min
-        average_lrp_scores_range = \
-            [(x - min_score) / lrp_range * threshold_range + threshold_min for x in average_lrp_scores]
-        average_lrp_scores_range_inverted = [1 - x for x in average_lrp_scores_range]
+        if lrp_range > 0:
+            average_lrp_scores_range = \
+                [(x - min_score) / lrp_range * threshold_range + threshold_min for x in average_lrp_scores]
+            average_lrp_scores_range_inverted = [1 - x for x in average_lrp_scores_range]
+        else:
+            average_lrp_scores_range = [0 for x in average_lrp_scores]
+            average_lrp_scores_range_inverted = [0 for x in average_lrp_scores]
+            print("LRP calculation did not yield useful values. Consider adjusting the LRP threshold.")
 
         return average_lrp_scores_range, average_lrp_scores_range_inverted

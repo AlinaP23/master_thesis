@@ -76,80 +76,12 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
     """
     data_frame = False
     activation = 'logistic'
+    X = None
+    Y = None
+    labels = None
+    probabilities = None
     np.random.seed(5)
-    if data_set == "iris":
-        iris = pd.read_csv('./data/iris.csv')
-
-        # Create numeric classes for species (0,1,2)
-        iris.loc[iris['species'] == 'virginica', 'species'] = 0
-        iris.loc[iris['species'] == 'versicolor', 'species'] = 1
-        iris.loc[iris['species'] == 'setosa', 'species'] = 2
-
-        # Create Input and Output columns
-        X = iris[['sepal_length', 'sepal_width', 'petal_length', 'petal_width']].values
-        Y = iris[['species']].values.ravel()
-        Y = pd.get_dummies(Y)
-
-        activation = 'relu'
-        labels = [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
-        data_frame = True
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "bank":
-        bank = pd.read_csv('./data/bank_data_balanced.csv', delimiter=";")
-
-        # Create Input and Output columns
-        X = bank[['age', 'job_num', 'marital_num', 'education_num', 'default_num', 'housing_num', 'loan_num',
-                  'contact_num', 'month_num', 'day_num', 'duration']].values
-        # One-hot encode Y so that the NN is created with two output nodes
-        Y = bank[['y']].values.ravel()
-        Y = pd.get_dummies(Y)
-
-        activation = 'logistic'
-        labels = [[1, 0], [0, 1]]
-        data_frame = True
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "income":
-        # https://archive.ics.uci.edu/ml/datasets/Adult
-        income = pd.read_csv('./data/adult.data.csv', delimiter=";")
-        X = income[['age', 'workclass', 'fnlwgt', 'education-num', 'marital-status', 'occupation',
-                    'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']]\
-            .values
-        label_encoder = LabelEncoder()
-        for column in [1, 4, 5, 6, 7, 8, 12]:
-            X[:, column] = label_encoder.fit_transform(X[:, column])
-
-        income.loc[income['y'] == '<=50K', 'y'] = 0
-        income.loc[income['y'] == '>50K', 'y'] = 1
-        Y = income[['y']].values.ravel()
-
-        activation = 'logistic'
-        labels = [0, 1]
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "income_balanced":
-        # https://archive.ics.uci.edu/ml/datasets/Adult
-        income = pd.read_csv('./data/adult.data_balanced.csv', delimiter=";")
-        income = shuffle(income)
-        X = income[['age', 'workclass', 'fnlwgt', 'education-num', 'marital-status', 'occupation',
-                    'relationship', 'race', 'sex', 'capital-gain', 'capital-loss', 'hours-per-week', 'native-country']]\
-            .values
-        label_encoder = LabelEncoder()
-        for column in [1, 4, 5, 6, 7, 8, 12]:
-            X[:, column] = label_encoder.fit_transform(X[:, column])
-
-        income.loc[income['y'] == '<=50K', 'y'] = 0
-        income.loc[income['y'] == '>50K', 'y'] = 1
-        Y = income[['y']].values.ravel()
-        Y = pd.get_dummies(Y)
-
-        activation = 'logistic'
-        labels = [[1, 0], [0, 1]]
-        data_frame = True
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "PAMAP2":
+    if data_set == "PAMAP2":
         # https://archive.ics.uci.edu/ml/datasets/PAMAP2+Physical+Activity+Monitoring
         sensor_data = pd.read_csv('./data/PAMAP2_Dataset/Protocol/subject101.dat', delimiter=" ", header=None)
         # sensor_data = sensor_data.append(pd.read_csv('./data/PAMAP2_Dataset/Protocol/subject102.dat', delimiter=" ", header=None))
@@ -217,7 +149,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         X = sensor_data.iloc[:, 2:].values
         Y = sensor_data.iloc[:, 1]. values
 
-        activation = 'logistic'
+        activation = 'relu'
         labels = ["M", "B"]
         probabilities = np.random.random(len(X[0]))
 
@@ -251,7 +183,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         X = sensor_data.values
         Y = np.array([200*[0], 200*[1], 200*[2], 200*[3], 200*[4], 200*[5], 200*[6], 200*[7], 200*[8], 200*[9]])
         Y = Y.flatten()
-        activation = 'logistic'
+        activation = 'relu'
         labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         probabilities = np.random.random(len(X[0]))
 

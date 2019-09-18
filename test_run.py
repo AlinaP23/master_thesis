@@ -15,9 +15,9 @@ algorithms_to_execute = {"LRP":     True,
                          "Learn++": False,
                          "DropIn":  True,
                          "SelectiveRetraining": False,
-                         "Imputation": True,
+                         "Imputation": False,
                          "Failure_Known": True}
-data_set = "Wine"
+data_set = "WBC"
 data_set_params = {"n_samples":     5000,
                    "n_features":    15,
                    "n_informative": 10,
@@ -43,42 +43,42 @@ multi_sensor_failure = True
 n_nearest_neighbors = 3
 
 # LRP
-LRP_hidden_layer_sizes = [10, 10, 10]
+LRP_hidden_layer_sizes = [50, 40, 30]
 LRP_learning_rate_init = 0.1
-LRP_random_states = [5]
+LRP_random_states = [9]
 LRP_seed = 9
 LRP_test_size = 0.1
 LRP_alpha = 2
-LRP_accuracy_threshold = 0.05
+LRP_accuracy_threshold = 0.1
 LRP_dropout_threshold_max = 0.4
 LRP_dropout_threshold_min = 0.1
 
 # Imputation
-imputation_hidden_layer_sizes = [12, 9, 3]
+imputation_hidden_layer_sizes = [50, 40, 30]
 imputation_learning_rate_init = 0.1
-imputation_random_state = 10
+imputation_random_state = 9
 
 # Learn++
-learn_hidden_layer_sizes = [10, 10, 10]
+learn_hidden_layer_sizes = [30, 30, 30]
 learn_learning_rate_init = 0.1
-learn_random_state = 5
+learn_random_state = 9
 learn_np_seed = 7
-learn_no_of_weak_classifiers = [200]
-learn_percentage_of_features = [0.15, 0.2, 0.4, 0.6]
+learn_no_of_weak_classifiers = [750]
+learn_percentage_of_features = [0.3]#[0.15, 0.2, 0.3, 0.4, 0.6, 0.8]
 learn_missing_data_representation = None
 learn_p_features_standard = None
-learn_p_weak_classifier_threshold = 0.1
+learn_p_weak_classifier_threshold = 0.5
 
 # DropIn
-dropin_hidden_layer_sizes = [9, 5, 3]
+dropin_hidden_layer_sizes = [50, 50, 50]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 9
 dropin_np_seed = 8
-p_dropin_standard = [0.2, 0.35, 0.5, 0.75, 0.8, 0.9, 0.95]
-dropin_epochs = 20
+p_dropin_standard = [0.1, 0.2, 0.35, 0.5, 0.75, 0.8, 0.9, 0.95]
+dropin_epochs = 35
 
 # Selective Retraining
-sr_hidden_layer_sizes = [12, 9, 3]
+sr_hidden_layer_sizes = [120, 100, 80]
 sr_learning_rate_init = 0.1
 sr_random_state = 9
 sr_weight_threshold = [0.1, 0.25, 0.3, 0.5, 0.75, 0.8]
@@ -444,170 +444,151 @@ if algorithms_to_execute["SelectiveRetraining"]:
             sr_predictions_failure_lrp_set.append(sr_predictions_failure_lrp)
 
 # --- PRINT RESULTS --- #
-if len(np.unique(y_train)) > 2:
-    print("Data Set: ", data_set)
-    if algorithms_to_execute["LRP"]:
-        print("Number of tuples taken into consideration:")
-        print(lrp_nn.LRP_scores_regarded)
-        print("Average LRP Scores per Feature:")
-        print(avg_lrp_scores)
-        print("Normalized - to be used for Learn++:")
-        print(avg_lrp_scores_normalized)
-        print("Inverted normalized - to be used for Selective Retraining:")
-        print(avg_lrp_scores_normalized_inverted)
-        print("Scaled to Dropout probabilities:")
-        print(avg_lrp_scores_scaled)
-        print("Inverted to Dropin probabilities - to be used for DropIn:")
-        print(avg_lrp_scores_scaled_inverted)
-        print("Scaled by range to Dropout prob.:")
-        print(avg_lrp_scores_range)
-        print("Inverted range prob.:")
-        print(avg_lrp_scores_range_inverted)
+print("Data Set: ", data_set)
+if algorithms_to_execute["LRP"]:
+    print("Number of tuples taken into consideration:")
+    print(lrp_nn.LRP_scores_regarded)
+    print("Average LRP Scores per Feature:")
+    print(avg_lrp_scores)
+    print("Normalized - to be used for Learn++:")
+    print(avg_lrp_scores_normalized)
+    print("Inverted normalized - to be used for Selective Retraining:")
+    print(avg_lrp_scores_normalized_inverted)
+    print("Scaled to Dropout probabilities:")
+    print(avg_lrp_scores_scaled)
+    print("Inverted to Dropin probabilities - to be used for DropIn:")
+    print(avg_lrp_scores_scaled_inverted)
+    print("Scaled by range to Dropout prob.:")
+    print(avg_lrp_scores_range)
+    print("Inverted range prob.:")
+    print(avg_lrp_scores_range_inverted)
 
-        print("")
-        print("Accuracy Score - LRP Network: ")
-        print("           w/o Sensor Failure: ", accuracy_score(lrp_predictions, y_test))
-        for i in range(lrp_predictions_failure.__len__()):
-            print("           w/  Sensor Failure (", failure_percentages[i], "): ",
-                  accuracy_score(lrp_predictions_failure[i], y_test))
+    print("")
+    print("Accuracy Score - LRP Network: ")
+    print("           w/o Sensor Failure: ", accuracy_score(lrp_predictions, y_test))
+    for i in range(lrp_predictions_failure.__len__()):
+        print("           w/  Sensor Failure (", failure_percentages[i], "): ",
+                accuracy_score(lrp_predictions_failure[i], y_test))
 
-    if algorithms_to_execute["Imputation"]:
-        print("")
-        print("Accuracy Score - Imputation:")
-        print("          w/o Sensor Failure: ", accuracy_score(imputation_predictions, y_test))
-        for i in range(median_imputation_predictions_failure.__len__()):
-            print("          w/  Median Imputation (", failure_percentages[i], "): ",
-                  accuracy_score(median_imputation_predictions_failure[i], y_test))
-        for i in range(mean_imputation_predictions_failure.__len__()):
-            print("          w/  Mean Imputation (", failure_percentages[i], "): ",
-                  accuracy_score(mean_imputation_predictions_failure[i], y_test))
-        for i in range(knn_imputation_predictions_failure.__len__()):
-            print("          w/  kNN Imputation (", failure_percentages[i], "): ",
-                  accuracy_score(knn_imputation_predictions_failure[i], y_test))
-        if algorithms_to_execute["Failure_Known"]:
-            print("          w/  Median Imputation & w/ Failure Known: ", accuracy_score(median_pred_failure_known, y_test))
-            print("          w/  Mean Imputation & w/ Failure Known: ", accuracy_score(mean_pred_failure_known, y_test))
-            print("          w/  kNN Imputation & w/ Failure Known: ", accuracy_score(knn_pred_failure_known, y_test))
+if algorithms_to_execute["Imputation"]:
+    print("")
+    print("Accuracy Score - Imputation:")
+    print("          w/o Sensor Failure: ", accuracy_score(imputation_predictions, y_test))
+    for i in range(median_imputation_predictions_failure.__len__()):
+         print("          w/  Median Imputation (", failure_percentages[i], "): ",
+                accuracy_score(median_imputation_predictions_failure[i], y_test))
+    for i in range(mean_imputation_predictions_failure.__len__()):
+        print("          w/  Mean Imputation (", failure_percentages[i], "): ",
+                accuracy_score(mean_imputation_predictions_failure[i], y_test))
+    for i in range(knn_imputation_predictions_failure.__len__()):
+        print("          w/  kNN Imputation (", failure_percentages[i], "): ",
+                accuracy_score(knn_imputation_predictions_failure[i], y_test))
+    if algorithms_to_execute["Failure_Known"]:
+        print("          w/  Median Imputation & w/ Failure Known: ", accuracy_score(median_pred_failure_known, y_test))
+        print("          w/  Mean Imputation & w/ Failure Known: ", accuracy_score(mean_pred_failure_known, y_test))
+        print("          w/  kNN Imputation & w/ Failure Known: ", accuracy_score(knn_pred_failure_known, y_test))
 
-    if algorithms_to_execute["Learn++"]:
-        print("")
-        print("Accuracy Score - Learn++:")
-        for w in range(learn_no_of_weak_classifiers.__len__()):
-            print("Number of weak classifiers: ", learn_no_of_weak_classifiers[w])
-            for pof in range(learn_percentage_of_features.__len__()):
-                print("Percentage of features: ", learn_percentage_of_features[pof])
-                print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(learn_predictions[w][pof], y_test))
-                for i in range(learn_predictions_failure_set[w][pof].__len__()):
-                    print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                          accuracy_score(learn_predictions_failure_set[w][pof][i], y_test))
-                if algorithms_to_execute["LRP"]:
-                    print("w/ LRP   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp[w][pof], y_test))
-                    for i in range(learn_predictions_failure_lrp_set[w][pof].__len__()):
-                        print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ",
-                              accuracy_score(learn_predictions_failure_lrp_set[w][pof][i], y_test))
-                    print("w/ LRPinv   & w/o Sensor Failure: ",
-                          accuracy_score(learn_predictions_lrp_inverted[w][pof], y_test))
-                    for i in range(learn_predictions_failure_lrp_inverted_set[w][pof].__len__()):
-                        print("w/ LRPinv   & w/  Sensor Failure(", failure_percentages[i], "): ",
-                              accuracy_score(learn_predictions_failure_lrp_inverted_set[w][pof][i], y_test))
-                if algorithms_to_execute["Failure_Known"]:
-                    print("w/ Failure Known: ",
-                          accuracy_score(learn_predictions_known[w][pof], y_test))
-                    print("w/ Failure Known & w/ LRP: ",
-                          accuracy_score(learn_predictions_known_lrp[w][pof], y_test))
-                    print("w/ Failure Known & w/ LRPinv: ",
-                          accuracy_score(learn_predictions_known_lrp_inverted[w][pof], y_test))
-                    print("w/ Failure Known & w/ Standard Training: ",
-                          accuracy_score(learn_predictions_known_standard[w][pof], y_test))
-
-    if algorithms_to_execute["DropIn"]:
-        print("")
-        print("Accuracy Score - DropIn:")
-        for k in range(p_dropin_standard.__len__()):
-            print("DropIn Prob.:", p_dropin_standard[k])
-            print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions[k], y_test))
-            for i in range(dropin_predictions_failure_set[k].__len__()):
+if algorithms_to_execute["Learn++"]:
+    print("")
+    print("Accuracy Score - Learn++:")
+    for w in range(learn_no_of_weak_classifiers.__len__()):
+        print("Number of weak classifiers: ", learn_no_of_weak_classifiers[w])
+        for pof in range(learn_percentage_of_features.__len__()):
+            print("Percentage of features: ", learn_percentage_of_features[pof])
+            print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(learn_predictions[w][pof], y_test))
+            for i in range(learn_predictions_failure_set[w][pof].__len__()):
                 print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      accuracy_score(dropin_predictions_failure_set[k][i], y_test))
-        if algorithms_to_execute["LRP"]:
-            print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp, y_test))
-            for i in range(dropin_predictions_failure_lrp.__len__()):
-                print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      accuracy_score(dropin_predictions_failure_lrp[i], y_test))
-            print("w/  LRPr & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp_r, y_test))
-            for i in range(dropin_predictions_failure_lrp_r.__len__()):
-                print("w/  LRPr & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      accuracy_score(dropin_predictions_failure_lrp_r[i], y_test))
-        if algorithms_to_execute["Failure_Known"]:
-            print("w/ Failure Known: ", accuracy_score(dropin_predictions_failure_known, y_test))
-            print("w/ Failure Known & w/ LRP: ", accuracy_score(dropin_predictions_failure_known_lrp, y_test))
-            print("w/ Failure Known & w/ LRPr: ", accuracy_score(dropin_predictions_failure_known_lrp_r, y_test))
-            print("w/ Failure Known & w/ Standard Training: ",
-                  accuracy_score(dropin_predictions_failure_known_standard, y_test))
-
-    if algorithms_to_execute["SelectiveRetraining"]:
-        print("")
-        for j in range(sr_weight_threshold.__len__()):
-            print("Accuracy Score - Selective Retraining (Weight Threshold: ", sr_weight_threshold[j], "):")
-            print("Accuracy Score - Without Retraining: ")
-            print("           w/o Sensor Failure: ", accuracy_score(sr_original_predictions[j], y_test))
-            for i in range(sr_original_predictions_failure_set[j].__len__()):
-                print("           w/  Sensor Failure (", failure_percentages[i], "): ",
-                      accuracy_score(sr_original_predictions_failure_set[j][i], y_test))
-            print("Accuracy Score - Selective Retraining: ")
-            print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions[j], y_test))
-            for i in range(sr_predictions_failure_set[j].__len__()):
-                print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      accuracy_score(sr_predictions_failure_set[j][i], y_test))
+                        accuracy_score(learn_predictions_failure_set[w][pof][i], y_test))
             if algorithms_to_execute["LRP"]:
-                print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions_lrp[j], y_test))
-                for i in range(sr_predictions_failure_lrp_set[j].__len__()):
-                    print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                          accuracy_score(sr_predictions_failure_lrp_set[j][i], y_test))
-else:
-    print("Data Set: ", data_set)
-    if algorithms_to_execute["LRP"]:
-        print("Number of tuples taken into consideration:")
-        print(lrp_nn.LRP_scores_regarded)
-        print("Average LRP Scores per Feature:")
-        print(avg_lrp_scores)
-        print("Normalized - to be used for Learn++:")
-        print(avg_lrp_scores_normalized)
-        print("Inverted normalized - to be used for Selective Retraining:")
-        print(avg_lrp_scores_normalized_inverted)
-        print("Scaled to Dropout probabilities:")
-        print(avg_lrp_scores_scaled)
-        print("Inverted to Dropin probabilities - to be used for DropIn:")
-        print(avg_lrp_scores_scaled_inverted)
-        print("Scaled by range to Dropout prob.:")
-        print(avg_lrp_scores_range)
-        print("Inverted range prob.:")
-        print(avg_lrp_scores_range_inverted)
+                print("w/ LRP   & w/o Sensor Failure: ", accuracy_score(learn_predictions_lrp[w][pof], y_test))
+                for i in range(learn_predictions_failure_lrp_set[w][pof].__len__()):
+                    print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ",
+                            accuracy_score(learn_predictions_failure_lrp_set[w][pof][i], y_test))
+                print("w/ LRPinv   & w/o Sensor Failure: ",
+                        accuracy_score(learn_predictions_lrp_inverted[w][pof], y_test))
+                for i in range(learn_predictions_failure_lrp_inverted_set[w][pof].__len__()):
+                    print("w/ LRPinv   & w/  Sensor Failure(", failure_percentages[i], "): ",
+                            accuracy_score(learn_predictions_failure_lrp_inverted_set[w][pof][i], y_test))
+            if algorithms_to_execute["Failure_Known"]:
+                print("w/ Failure Known: ",
+                        accuracy_score(learn_predictions_known[w][pof], y_test))
+                print("w/ Failure Known & w/ LRP: ",
+                        accuracy_score(learn_predictions_known_lrp[w][pof], y_test))
+                print("w/ Failure Known & w/ LRPinv: ",
+                        accuracy_score(learn_predictions_known_lrp_inverted[w][pof], y_test))
+                print("w/ Failure Known & w/ Standard Training: ",
+                        accuracy_score(learn_predictions_known_standard[w][pof], y_test))
 
+if algorithms_to_execute["DropIn"]:
+    print("")
+    print("Accuracy Score - DropIn:")
+    for k in range(p_dropin_standard.__len__()):
+        print("DropIn Prob.:", p_dropin_standard[k])
+        print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions[k], y_test))
+        for i in range(dropin_predictions_failure_set[k].__len__()):
+            print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
+                    accuracy_score(dropin_predictions_failure_set[k][i], y_test))
+    if algorithms_to_execute["LRP"]:
+        print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp, y_test))
+        for i in range(dropin_predictions_failure_lrp.__len__()):
+            print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
+                    accuracy_score(dropin_predictions_failure_lrp[i], y_test))
+        print("w/  LRPr & w/o Sensor Failure: ", accuracy_score(dropin_predictions_lrp_r, y_test))
+        for i in range(dropin_predictions_failure_lrp_r.__len__()):
+            print("w/  LRPr & w/  Sensor Failure (", failure_percentages[i], "): ",
+                    accuracy_score(dropin_predictions_failure_lrp_r[i], y_test))
+    if algorithms_to_execute["Failure_Known"]:
+        print("w/ Failure Known: ", accuracy_score(dropin_predictions_failure_known, y_test))
+        print("w/ Failure Known & w/ LRP: ", accuracy_score(dropin_predictions_failure_known_lrp, y_test))
+        print("w/ Failure Known & w/ LRPr: ", accuracy_score(dropin_predictions_failure_known_lrp_r, y_test))
+        print("w/ Failure Known & w/ Standard Training: ",
+                accuracy_score(dropin_predictions_failure_known_standard, y_test))
+
+if algorithms_to_execute["SelectiveRetraining"]:
+    print("")
+    for j in range(sr_weight_threshold.__len__()):
+        print("Accuracy Score - Selective Retraining (Weight Threshold: ", sr_weight_threshold[j], "):")
+        print("Accuracy Score - Without Retraining: ")
+        print("           w/o Sensor Failure: ", accuracy_score(sr_original_predictions[j], y_test))
+        for i in range(sr_original_predictions_failure_set[j].__len__()):
+            print("           w/  Sensor Failure (", failure_percentages[i], "): ",
+                    accuracy_score(sr_original_predictions_failure_set[j][i], y_test))
+        print("Accuracy Score - Selective Retraining: ")
+        print("w/o LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions[j], y_test))
+        for i in range(sr_predictions_failure_set[j].__len__()):
+            print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
+                  accuracy_score(sr_predictions_failure_set[j][i], y_test))
+        if algorithms_to_execute["LRP"]:
+            print("w/  LRP  & w/o Sensor Failure: ", accuracy_score(sr_predictions_lrp[j], y_test))
+            for i in range(sr_predictions_failure_lrp_set[j].__len__()):
+                print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
+                      accuracy_score(sr_predictions_failure_lrp_set[j][i], y_test))
+if len(np.unique(y_train)) < 3:
+    if algorithms_to_execute["LRP"]:
         print("")
         print("F-Measure - LRP Network: ")
-        print("           w/o Sensor Failure: ", f1_score(lrp_predictions, y_test))
+        print("           w/o Sensor Failure: ", f1_score(lrp_predictions, y_test, pos_label=labels[0], labels=labels))
         for i in range(lrp_predictions_failure.__len__()):
             print("           w/  Sensor Failure (", failure_percentages[i], "): ",
-                  f1_score(lrp_predictions_failure[i], y_test))
+                  f1_score(lrp_predictions_failure[i], y_test, pos_label=labels[0]))
 
     if algorithms_to_execute["Imputation"]:
         print("")
         print("F-Measure - Imputation:")
-        print("          w/o Sensor Failure: ", f1_score(imputation_predictions, y_test))
+        print("          w/o Sensor Failure: ", f1_score(imputation_predictions, y_test, pos_label=labels[0]))
         for i in range(median_imputation_predictions_failure.__len__()):
             print("          w/  Median Imputation (", failure_percentages[i], "): ",
-                  f1_score(median_imputation_predictions_failure[i], y_test))
+                  f1_score(median_imputation_predictions_failure[i], y_test, pos_label=labels[0]))
         for i in range(mean_imputation_predictions_failure.__len__()):
             print("          w/  Mean Imputation (", failure_percentages[i], "): ",
-                  f1_score(mean_imputation_predictions_failure[i], y_test))
+                  f1_score(mean_imputation_predictions_failure[i], y_test, pos_label=labels[0]))
         for i in range(knn_imputation_predictions_failure.__len__()):
             print("          w/  kNN Imputation (", failure_percentages[i], "): ",
-                  f1_score(knn_imputation_predictions_failure[i], y_test))
+                  f1_score(knn_imputation_predictions_failure[i], y_test, pos_label=labels[0]))
         if algorithms_to_execute["Failure_Known"]:
-            print("          w/  Median Imputation & w/ Failure Known: ", f1_score(median_pred_failure_known, y_test))
-            print("          w/  Mean Imputation & w/ Failure Known: ", f1_score(mean_pred_failure_known, y_test))
-            print("          w/  kNN Imputation & w/ Failure Known: ", f1_score(knn_pred_failure_known, y_test))
+            print("          w/  Median Imputation & w/ Failure Known: ", f1_score(median_pred_failure_known, y_test, pos_label=labels[0]))
+            print("          w/  Mean Imputation & w/ Failure Known: ", f1_score(mean_pred_failure_known, y_test, pos_label=labels[0]))
+            print("          w/  kNN Imputation & w/ Failure Known: ", f1_score(knn_pred_failure_known, y_test, pos_label=labels[0]))
 
     if algorithms_to_execute["Learn++"]:
         print("")
@@ -616,71 +597,71 @@ else:
             print("Number of weak classifiers: ", learn_no_of_weak_classifiers[w])
             for pof in range(learn_percentage_of_features.__len__()):
                 print("Percentage of features: ", learn_percentage_of_features[pof])
-                print("w/o LRP  & w/o Sensor Failure: ", f1_score(learn_predictions[w][pof], y_test))
+                print("w/o LRP  & w/o Sensor Failure: ", f1_score(learn_predictions[w][pof], y_test, pos_label=labels[0]))
                 for i in range(learn_predictions_failure_set[w][pof].__len__()):
                     print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                          f1_score(learn_predictions_failure_set[w][pof][i], y_test))
+                          f1_score(learn_predictions_failure_set[w][pof][i], y_test, pos_label=labels[0]))
                 if algorithms_to_execute["LRP"]:
-                    print("w/ LRP   & w/o Sensor Failure: ", f1_score(learn_predictions_lrp[w][pof], y_test))
+                    print("w/ LRP   & w/o Sensor Failure: ", f1_score(learn_predictions_lrp[w][pof], y_test, pos_label=labels[0]))
                     for i in range(learn_predictions_failure_lrp_set[w][pof].__len__()):
                         print("w/ LRP   & w/  Sensor Failure(", failure_percentages[i], "): ",
-                              f1_score(learn_predictions_failure_lrp_set[w][pof][i], y_test))
+                              f1_score(learn_predictions_failure_lrp_set[w][pof][i], y_test, pos_label=labels[0]))
                     print("w/ LRPinv   & w/o Sensor Failure: ",
-                          f1_score(learn_predictions_lrp_inverted[w][pof], y_test))
+                          f1_score(learn_predictions_lrp_inverted[w][pof], y_test, pos_label=labels[0]))
                     for i in range(learn_predictions_failure_lrp_inverted_set[w][pof].__len__()):
                         print("w/ LRPinv   & w/  Sensor Failure(", failure_percentages[i], "): ",
-                              f1_score(learn_predictions_failure_lrp_inverted_set[w][pof][i], y_test))
+                              f1_score(learn_predictions_failure_lrp_inverted_set[w][pof][i], y_test, pos_label=labels[0]))
                 if algorithms_to_execute["Failure_Known"]:
                     print("w/ Failure Known: ",
-                          f1_score(learn_predictions_known[w][pof], y_test))
+                          f1_score(learn_predictions_known[w][pof], y_test, pos_label=labels[0]))
                     print("w/ Failure Known & w/ LRP: ",
-                          f1_score(learn_predictions_known_lrp[w][pof], y_test))
+                          f1_score(learn_predictions_known_lrp[w][pof], y_test, pos_label=labels[0]))
                     print("w/ Failure Known & w/ LRPinv: ",
-                          f1_score(learn_predictions_known_lrp_inverted[w][pof], y_test))
+                          f1_score(learn_predictions_known_lrp_inverted[w][pof], y_test, pos_label=labels[0]))
                     print("w/ Failure Known & w/ Standard Training: ",
-                          f1_score(learn_predictions_known_standard[w][pof], y_test))
+                          f1_score(learn_predictions_known_standard[w][pof], y_test, pos_label=labels[0]))
 
     if algorithms_to_execute["DropIn"]:
         print("")
         print("F-Measure - DropIn:")
         for k in range(p_dropin_standard.__len__()):
             print("DropIn Prob.:", p_dropin_standard[k])
-            print("w/o LRP  & w/o Sensor Failure: ", f1_score(dropin_predictions[k], y_test))
+            print("w/o LRP  & w/o Sensor Failure: ", f1_score(dropin_predictions[k], y_test, pos_label=labels[0]))
             for i in range(dropin_predictions_failure_set[k].__len__()):
                 print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      f1_score(dropin_predictions_failure_set[k][i], y_test))
+                      f1_score(dropin_predictions_failure_set[k][i], y_test, pos_label=labels[0]))
         if algorithms_to_execute["LRP"]:
-            print("w/  LRP  & w/o Sensor Failure: ", f1_score(dropin_predictions_lrp, y_test))
+            print("w/  LRP  & w/o Sensor Failure: ", f1_score(dropin_predictions_lrp, y_test, pos_label=labels[0]))
             for i in range(dropin_predictions_failure_lrp.__len__()):
                 print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      f1_score(dropin_predictions_failure_lrp[i], y_test))
-            print("w/  LRPr & w/o Sensor Failure: ", f1_score(dropin_predictions_lrp_r, y_test))
+                      f1_score(dropin_predictions_failure_lrp[i], y_test, pos_label=labels[0]))
+            print("w/  LRPr & w/o Sensor Failure: ", f1_score(dropin_predictions_lrp_r, y_test, pos_label=labels[0]))
             for i in range(dropin_predictions_failure_lrp_r.__len__()):
                 print("w/  LRPr & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      f1_score(dropin_predictions_failure_lrp_r[i], y_test))
+                      f1_score(dropin_predictions_failure_lrp_r[i], y_test, pos_label=labels[0]))
         if algorithms_to_execute["Failure_Known"]:
-            print("w/ Failure Known: ", f1_score(dropin_predictions_failure_known, y_test))
-            print("w/ Failure Known & w/ LRP: ", f1_score(dropin_predictions_failure_known_lrp, y_test))
-            print("w/ Failure Known & w/ LRPr: ", f1_score(dropin_predictions_failure_known_lrp_r, y_test))
+            print("w/ Failure Known: ", f1_score(dropin_predictions_failure_known, y_test, pos_label=labels[0]))
+            print("w/ Failure Known & w/ LRP: ", f1_score(dropin_predictions_failure_known_lrp, y_test, pos_label=labels[0]))
+            print("w/ Failure Known & w/ LRPr: ", f1_score(dropin_predictions_failure_known_lrp_r, y_test, pos_label=labels[0]))
             print("w/ Failure Known & w/ Standard Training: ",
-                  f1_score(dropin_predictions_failure_known_standard, y_test))
+                  f1_score(dropin_predictions_failure_known_standard, y_test, pos_label=labels[0]))
 
     if algorithms_to_execute["SelectiveRetraining"]:
         print("")
         for j in range(sr_weight_threshold.__len__()):
             print("F-Measure - Selective Retraining (Weight Threshold: ", sr_weight_threshold[j], "):")
             print("F-Measure - Without Retraining: ")
-            print("           w/o Sensor Failure: ", f1_score(sr_original_predictions[j], y_test))
+            print("           w/o Sensor Failure: ", f1_score(sr_original_predictions[j], y_test, pos_label=labels[0]))
             for i in range(sr_original_predictions_failure_set[j].__len__()):
                 print("           w/  Sensor Failure (", failure_percentages[i], "): ",
-                      f1_score(sr_original_predictions_failure_set[j][i], y_test))
+                      f1_score(sr_original_predictions_failure_set[j][i], y_test, pos_label=labels[0]))
             print("F-Measure - Selective Retraining: ")
-            print("w/o LRP  & w/o Sensor Failure: ", f1_score(sr_predictions[j], y_test))
+            print("w/o LRP  & w/o Sensor Failure: ", f1_score(sr_predictions[j], y_test, pos_label=labels[0]))
             for i in range(sr_predictions_failure_set[j].__len__()):
                 print("w/o LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                      f1_score(sr_predictions_failure_set[j][i], y_test))
+                      f1_score(sr_predictions_failure_set[j][i], y_test, pos_label=labels[0]))
             if algorithms_to_execute["LRP"]:
-                print("w/  LRP  & w/o Sensor Failure: ", f1_score(sr_predictions_lrp[j], y_test))
+                print("w/  LRP  & w/o Sensor Failure: ", f1_score(sr_predictions_lrp[j], y_test, pos_label=labels[0]))
                 for i in range(sr_predictions_failure_lrp_set[j].__len__()):
                     print("w/  LRP  & w/  Sensor Failure (", failure_percentages[i], "): ",
-                          f1_score(sr_predictions_failure_lrp_set[j][i], y_test))
+                          f1_score(sr_predictions_failure_lrp_set[j][i], y_test, pos_label=labels[0]))
