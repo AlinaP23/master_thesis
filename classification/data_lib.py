@@ -82,7 +82,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
     if data_set == "ION":
         # https://archive.ics.uci.edu/ml/datasets/ionosphere
-        sensor_data = pd.read_csv('./data/ION/ionosphere.data', delimiter=",", header=None)
+        sensor_data = pd.read_csv('../data/ION/ionosphere.data', delimiter=",", header=None)
 
         X = sensor_data.iloc[:, :33].values
         Y = sensor_data.iloc[:, 34].values
@@ -93,7 +93,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
     elif data_set == "OCR":
         # https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits
-        sensor_data = pd.read_csv('./data/OCR/optdigits.tra', delimiter=",", header=None)
+        sensor_data = pd.read_csv('../data/OCR/optdigits.tra', delimiter=",", header=None)
         sensor_data = sensor_data.append(pd.read_csv('./data/OCR/optdigits.tes', delimiter=",", header=None))
 
         X = sensor_data.iloc[:, 1:63].values
@@ -105,7 +105,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
     elif data_set == "Wine":
         # https://archive.ics.uci.edu/ml/datasets/Wine
-        sensor_data = pd.read_csv('./data/Wine/wine.data', delimiter=",", header=None)
+        sensor_data = pd.read_csv('../data/Wine/wine.data', delimiter=",", header=None)
 
         X = sensor_data.iloc[:, 1:].values
         Y = sensor_data.iloc[:, 0].values
@@ -116,7 +116,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
 
     elif data_set == "WBC":
         # https://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
-        sensor_data = pd.read_csv('./data/WBC/wdbc.data', delimiter=",", header=None)
+        sensor_data = pd.read_csv('../data/WBC/wdbc.data', delimiter=",", header=None)
 
         X = sensor_data.iloc[:, 2:].values
         Y = sensor_data.iloc[:, 1]. values

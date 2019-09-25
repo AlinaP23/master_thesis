@@ -1,9 +1,9 @@
-import data_lib
+import classification.data_lib as data_lib
 import imputation
-from LRP import LRPNetwork
-from LearnPlus import LearnCommittee
-from DropIn import DropInNetwork
-from SelectiveRetraining import SelectiveRetrainingCommittee
+from classification.LRP import LRPNetwork
+from classification.LearnPlus import LearnCommittee
+from classification.DropIn import DropInNetwork
+from classification.SelectiveRetraining import SelectiveRetrainingCommittee
 from sklearn import model_selection
 from sklearn.metrics import accuracy_score, f1_score
 from sklearn.neural_network import MLPClassifier
@@ -12,10 +12,10 @@ import numpy as np
 # --- PARAMETERS --- #
 # General
 algorithms_to_execute = {"LRP":     True,
-                         "Learn++": False,
+                         "Learn++": True,
                          "DropIn":  True,
-                         "SelectiveRetraining": False,
-                         "Imputation": False,
+                         "SelectiveRetraining": True,
+                         "Imputation": True,
                          "Failure_Known": True}
 data_set = "WBC"  # options: WBC, ION, OCR, Wine, sklearn
 data_set_params = {"n_samples":     5000,
@@ -63,7 +63,7 @@ learn_hidden_layer_sizes = [30, 30, 30]
 learn_learning_rate_init = 0.1
 learn_random_state = 9
 learn_np_seed = 7
-learn_no_of_weak_classifiers = [750]
+learn_no_of_weak_classifiers = [50]
 learn_percentage_of_features = [0.15, 0.2, 0.3, 0.4, 0.6, 0.8]
 learn_missing_data_representation = None
 learn_p_features_standard = None
