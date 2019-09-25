@@ -64,24 +64,6 @@ def get_data_set(data_set, n_samples=100, n_features=100, n_informative=10, n_ta
         activation = "relu"
         probabilities = np.random.random(len(X[0]))
 
-    elif data_set == "CCP":
-        sensor_data = pd.read_excel('../data/CCPP/Folds5x2_pp.xlsx')
-
-        X = sensor_data.iloc[:, :4].values
-        Y = sensor_data.iloc[:, 4].values
-
-        activation = "logistic"
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "residential_building":
-        sensor_data = pd.read_excel('../data/Residential Building/Residential-Building-Data-Set.xlsx', header=1)
-
-        X = sensor_data.iloc[:, :103].values
-        Y = sensor_data.iloc[:, 103].values  # alternatively 104
-
-        activation = "logistic"
-        probabilities = np.random.random(len(X[0]))
-
     elif data_set == "forest_fires":
         sensor_data = pd.read_csv('../data/Forest Fires/forestfires.csv', delimiter=",")
 

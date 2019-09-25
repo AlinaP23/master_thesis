@@ -1,7 +1,5 @@
-from sklearn.preprocessing import LabelEncoder
 import pandas as pd
 import numpy as np
-from sklearn.utils import shuffle
 from sklearn.datasets import make_classification
 
 
@@ -81,54 +79,28 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
     labels = None
     probabilities = None
     np.random.seed(5)
-    if data_set == "PAMAP2":
-        # https://archive.ics.uci.edu/ml/datasets/PAMAP2+Physical+Activity+Monitoring
-        sensor_data = pd.read_csv('./data/PAMAP2_Dataset/Protocol/subject101.dat', delimiter=" ", header=None)
-        # sensor_data = sensor_data.append(pd.read_csv('./data/PAMAP2_Dataset/Protocol/subject102.dat', delimiter=" ", header=None))
 
-        # https://github.com/scikit-learn/scikit-learn/issues/8755
-        X = sensor_data.iloc[0:1000, pd.np.r_[3:15, 20:32, 37:49]].values
+    if data_set == "ION":
+        # https://archive.ics.uci.edu/ml/datasets/ionosphere
+        sensor_data = pd.read_csv('./data/ION/ionosphere.data', delimiter=",", header=None)
 
-        # Y = np.where(sensor_data.iloc[:, 1].values != 0)
-        Y = sensor_data.iloc[0:1000, 1].values
-
-        # Group to physical activity intensity -> 1: light, 2: moderate, 3: vigorous
-        Y[((Y == 1) | (Y == 2) | (Y == 3) | (Y == 17))] = 1
-        Y[((Y == 4) | (Y == 6) | (Y == 7) | (Y == 13) | (Y == 16))] = 2
-        Y[((Y == 5) | (Y == 12) | (Y == 20) | (Y == 24))] = 3
-
-        # Create sliding window representation
-        window_size = 512
-        X_sw = np.ndarray(shape=(len(X) - window_size, len(X[0]) * window_size))
-        for i in range(0, len(X) - window_size):
-            X_sw[i] = X[i:i+window_size].flatten()
-            Y[i] = int(Y[i + int(window_size/2)])
-
-        X = X_sw
-        Y = Y[0:(len(Y) - window_size)]
-
-        activation = "logistic"
-        labels = [0, 1, 2, 3]
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "gas_sensor_array_drift":
-        # https://archive.ics.uci.edu/ml/datasets/Gas+Sensor+Array+Drift+Dataset+at+Different+Concentrations
-        sensor_data = pd.read_csv('./data/gas_sensor_array_drift/batch10.dat', delimiter=" ", header=None)
-        #sensor_data = sensor_data.append(pd.read_csv('./data/gas_sensor_array_drift/batch2.dat', delimiter=" ", header=None))
-        #sensor_data = sensor_data.append(pd.read_csv('./data/gas_sensor_array_drift/batch3.dat', delimiter=" ", header=None))
-
-        sensor_data = shuffle(sensor_data, random_state=random_state)
-        for c in sensor_data.columns.values:
-            if c == 0:
-                Y = sensor_data[c].apply(lambda x: float(str(x).split(';')[0]))
-                sensor_data[c] = sensor_data[c].apply(lambda x: float(str(x).split(';')[1]))
-            elif c < 129:
-                sensor_data[c] = sensor_data[c].apply(lambda x: float(str(x).split(':')[1]))
-
-        X = sensor_data.iloc[:, 0:129].values
+        X = sensor_data.iloc[:, :33].values
+        Y = sensor_data.iloc[:, 34].values
 
         activation = 'logistic'
-        labels = [1, 2, 3, 4, 5, 6]
+        labels = ["g", "b"]
+        probabilities = np.random.random(len(X[0]))
+
+    elif data_set == "OCR":
+        # https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits
+        sensor_data = pd.read_csv('./data/OCR/optdigits.tra', delimiter=",", header=None)
+        sensor_data = sensor_data.append(pd.read_csv('./data/OCR/optdigits.tes', delimiter=",", header=None))
+
+        X = sensor_data.iloc[:, 1:63].values
+        Y = sensor_data.iloc[:, 64].values
+
+        activation = 'logistic'
+        labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
         probabilities = np.random.random(len(X[0]))
 
     elif data_set == "Wine":
@@ -153,40 +125,6 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
         labels = ["M", "B"]
         probabilities = np.random.random(len(X[0]))
 
-    elif data_set == "OCR":
-        # https://archive.ics.uci.edu/ml/datasets/optical+recognition+of+handwritten+digits
-        sensor_data = pd.read_csv('./data/OCR/optdigits.tra', delimiter=",", header=None)
-        sensor_data = sensor_data.append(pd.read_csv('./data/OCR/optdigits.tes', delimiter=",", header=None))
-
-        X = sensor_data.iloc[:, 1:63].values
-        Y = sensor_data.iloc[:, 64].values
-
-        activation = 'logistic'
-        labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "ION":
-        # https://archive.ics.uci.edu/ml/datasets/ionosphere
-        sensor_data = pd.read_csv('./data/ION/ionosphere.data', delimiter=",", header=None)
-
-        X = sensor_data.iloc[:, :33].values
-        Y = sensor_data.iloc[:, 34].values
-
-        activation = 'logistic'
-        labels = ["g", "b"]
-        probabilities = np.random.random(len(X[0]))
-
-    elif data_set == "MFEAT":
-        # https://archive.ics.uci.edu/ml/datasets/Multiple+Features
-        sensor_data = pd.read_csv('./data/MFEAT/mfeat-fac', delim_whitespace=True, header=None)
-
-        X = sensor_data.values
-        Y = np.array([200*[0], 200*[1], 200*[2], 200*[3], 200*[4], 200*[5], 200*[6], 200*[7], 200*[8], 200*[9]])
-        Y = Y.flatten()
-        activation = 'relu'
-        labels = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-        probabilities = np.random.random(len(X[0]))
-
     elif data_set == "sklearn":
         X, Y = make_classification(n_samples=n_samples,
                                    n_features=n_features,
@@ -204,7 +142,7 @@ def get_data_set(data_set, n_samples=100, n_features=20, n_informative=2, n_redu
                                    shuffle=data_shuffle,
                                    random_state=random_state)
         Y = pd.get_dummies(Y)
-        activation = 'relu'
+        activation = 'logistic'
         labels = []
         for i in range(0, n_classes):
             single_label = [0] * n_classes

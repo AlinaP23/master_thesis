@@ -14,11 +14,11 @@ from sklearn.neural_network import MLPRegressor
 # General
 algorithms_to_execute = {"LRP":     True,
                          "Learn++": True,
-                         "DropIn":  False,
-                         "SelectiveRetraining": False,
-                         "Imputation": False,
+                         "DropIn":  True,
+                         "SelectiveRetraining": True,
+                         "Imputation": True,
                          "Failure_Known": True}
-data_set = "energy_efficiency"
+data_set = "energy_efficiency"  # options: energy_efficiency, forest_fires, sklearn
 data_set_params = {"n_samples":      5000,
                    "n_features":     15,
                    "n_informative":  15,
@@ -40,7 +40,7 @@ multi_sensor_failure = True
 n_nearest_neighbors = 3
 
 # LRP
-LRP_hidden_layer_sizes = [10, 9, 8]#[100, 70, 50]
+LRP_hidden_layer_sizes = [10, 9, 8]
 LRP_learning_rate_init = 0.1
 LRP_random_states = [3]
 LRP_seed = 3
@@ -67,7 +67,7 @@ learn_p_features_standard = None
 learn_p_weak_regressor_threshold = 0.3
 
 # DropIn
-dropin_hidden_layer_sizes = [10, 9, 8] #[60, 60, 60]
+dropin_hidden_layer_sizes = [10, 9, 8]
 dropin_learning_rate_init = 0.1
 dropin_random_state = 3
 dropin_np_seed = 3
@@ -76,7 +76,7 @@ dropin_epochs = 20
 dropin_seq_length = 1
 
 # Selective Retraining
-sr_hidden_layer_sizes = [10, 9, 8]#[10, 9, 8]
+sr_hidden_layer_sizes = [10, 9, 8]
 sr_learning_rate_init = 0.1
 sr_random_state = 3
 sr_weight_threshold = [0.1, 0.3, 0.75]

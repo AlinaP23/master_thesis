@@ -17,7 +17,7 @@ algorithms_to_execute = {"LRP":     True,
                          "SelectiveRetraining": False,
                          "Imputation": False,
                          "Failure_Known": True}
-data_set = "WBC"
+data_set = "WBC"  # options: WBC, ION, OCR, Wine, sklearn
 data_set_params = {"n_samples":     5000,
                    "n_features":    15,
                    "n_informative": 10,
@@ -64,7 +64,7 @@ learn_learning_rate_init = 0.1
 learn_random_state = 9
 learn_np_seed = 7
 learn_no_of_weak_classifiers = [750]
-learn_percentage_of_features = [0.3]#[0.15, 0.2, 0.3, 0.4, 0.6, 0.8]
+learn_percentage_of_features = [0.15, 0.2, 0.3, 0.4, 0.6, 0.8]
 learn_missing_data_representation = None
 learn_p_features_standard = None
 learn_p_weak_classifier_threshold = 0.5
